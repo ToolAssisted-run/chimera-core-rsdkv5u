@@ -207,6 +207,40 @@ each. The owner accepted every recommendation:
 None of these changed the core's code or declarations: the core already
 was what the recommendations described.
 
+## Names are never translated (user-decided, 2026-10-31)
+
+The owner's rule for every language table: a name - Chimera's, a
+program's, a game's, a character's, a machine's, a company's, this core's
+coreName - is written as it is in every language. A language whose grammar
+puts endings on names says the sentence with a common noun beside the
+name instead ("Retro Engine -moottorin", "Sonic Origins koleksiyonunun",
+"a Sonic CD jatekban"). No case ending, genitive "s" or other letters are
+glued to a name; a particle in another script (Korean's, Japanese's) is
+fine.
+
+What was wrong in the 26 tables: the check reports 51 problems in 27 texts
+of 9 languages.
+
+- Finnish, Hungarian and Turkish put endings on Sonic Origins, Origins
+  Plus, Sonic CD and Retro Engine ("Sonic Originsin", "Sonic CD:ssa",
+  "Sonic Originsbol", "Sonic Origins'ten"); Czech and Polish on Knuckles
+  ("Knucklese", "Knucklesa").
+- Japanese, Korean, Russian and Ukrainian wrote Amy and Knuckles in their
+  own scripts. They are now written as they are.
+
+`waterbox/tests/check-names.py` is the check, and the gate runs it (the
+test "names"). It knows Chimera's names (from Chimera's
+tools/check-proper-nouns.py) and this core's: rsdkv5u, Retro Engine,
+RSDKv3/v4/v5, Sonic Origins, Origins Plus, the games, the characters,
+Evening Star, Sega, SDL. It says when a name an English text holds is not
+in the same text of another language as it is, and when Latin letters are
+glued to a name or a short ending (up to four letters) is joined to it by
+a hyphen, colon or apostrophe. A hyphen and a longer word is a compound
+with a common noun ("Plus-Inhalte") and passes. With one Turkish text left
+bent the gate failed on it (26 passed, 1 failed); after it was fixed, 27
+passed. Chimera's own check (tools/check-proper-nouns.py, pointed at
+waterbox) and tools/check-core-texts.py also pass on the tables.
+
 ## Where this stands (2026-10-31)
 
 Works, on the test games only: the core in both legacy modes, native and

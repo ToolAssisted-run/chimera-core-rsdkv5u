@@ -40,7 +40,7 @@
 		"setting.language.option.zh": "chiński (tradycyjny)",
 		"setting.language.option.zhs": "chiński (uproszczony)",
 		"setting.plus": "Zawartość Plus",
-		"setting.plus.origins_about": "Włącza zawartość Sonic Origins Plus w pakietach danych (Amy oraz Knucklesa w Sonic CD), tak jak posiadanie Origins Plus. Domyślnie wyłączone, jak wymaga licencja dekompilacji od rozpowszechnianej kompilacji. Pakiety muszą zawierać zawartość Plus. Zmienia to grę, więc film to zapisuje.",
+		"setting.plus.origins_about": "Włącza zawartość Sonic Origins Plus w pakietach danych (Amy oraz postać Knuckles w Sonic CD), tak jak posiadanie Origins Plus. Domyślnie wyłączone, jak wymaga licencja dekompilacji od rozpowszechnianej kompilacji. Pakiety muszą zawierać zawartość Plus. Zmienia to grę, więc film to zapisuje.",
 		"setting.randomseed": "Ziarno losowe",
 		"setting.randomseed.about": "Liczba, od której zaczynają się liczby losowe silnika. Silnik bierze ją z zegara przy starcie (time()); tutaj jest to ta liczba, więc nagranie przebiega za każdym razem tak samo. Daty, które gra zapisuje w swoich rekordach, to także ta liczba. Nagranie ją zapisuje.",
 		"setting.screenwidth": "Szerokość ekranu",

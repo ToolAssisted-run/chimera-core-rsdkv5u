@@ -40,7 +40,7 @@
 		"setting.language.option.zh": "中国語(繁体字)",
 		"setting.language.option.zhs": "中国語(簡体字)",
 		"setting.plus": "Plusの内容",
-		"setting.plus.origins_about": "データパック内の Sonic Origins Plus のコンテンツ (エイミー、Sonic CD ではナックルズ) を、Origins Plus を所有している場合と同じく有効にします。配布するビルドに対して逆コンパイルのライセンスが求めるとおり、既定ではオフです。パックに Plus のコンテンツが含まれている必要があります。ゲームが変わるため、ムービーに記録されます。",
+		"setting.plus.origins_about": "データパック内の Sonic Origins Plus のコンテンツ (Amy、Sonic CD では Knuckles) を、Origins Plus を所有している場合と同じく有効にします。配布するビルドに対して逆コンパイルのライセンスが求めるとおり、既定ではオフです。パックに Plus のコンテンツが含まれている必要があります。ゲームが変わるため、ムービーに記録されます。",
 		"setting.randomseed": "乱数の種",
 		"setting.randomseed.about": "エンジンの乱数が始まる数です。エンジンは起動時に時刻(time())からこの数を取りますが、ここではこの数を使うので、ムービーは毎回同じように再生されます。ゲームがその記録に書き込む日付も、この数から作られます。ムービーにはこの数が記録されます。",
 		"setting.screenwidth": "画面の幅",

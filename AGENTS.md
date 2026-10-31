@@ -52,5 +52,9 @@ cd waterbox
 - An edit to an engine file that another .cpp includes (the legacy code)
   does not rebuild by itself: touch the including file.
 - No game data in the repository, in CI or in an issue.
+- Names are never translated or bent in the language tables (Chimera's
+  owner, 2026-10-31): a grammar that puts endings on names gets a common
+  noun beside the name instead. `waterbox/tests/check-names.py` checks it,
+  in the gate; add a new name to its list.
 - Plain language and ASCII in documents. Commits: `type(rsdkv5u): what`, a
   short body with the numbers, explicit paths staged.

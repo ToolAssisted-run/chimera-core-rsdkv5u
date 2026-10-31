@@ -40,7 +40,7 @@
 		"setting.language.option.zh": "Čínština (tradiční)",
 		"setting.language.option.zhs": "Čínština (zjednodušená)",
 		"setting.plus": "Obsah Plus",
-		"setting.plus.origins_about": "Zapne obsah Sonic Origins Plus v datových balících (Amy a v Sonic CD Knucklese), jako to dělá vlastnictví Origins Plus. Ve výchozím stavu vypnuto, jak licence dekompilace vyžaduje u šířeného sestavení. Balíky musí obsahovat obsah Plus. Mění to hru, a proto to film zaznamená.",
+		"setting.plus.origins_about": "Zapne obsah Sonic Origins Plus v datových balících (Amy a v Sonic CD postavu Knuckles), jako to dělá vlastnictví Origins Plus. Ve výchozím stavu vypnuto, jak licence dekompilace vyžaduje u šířeného sestavení. Balíky musí obsahovat obsah Plus. Mění to hru, a proto to film zaznamená.",
 		"setting.randomseed": "Náhodné semeno",
 		"setting.randomseed.about": "Číslo, od kterého začínají náhodná čísla enginu. Engine je bere z hodin při startu (time()); zde je to toto číslo, takže se záznam pokaždé přehraje stejně. Data, která hra zapisuje do svých záznamů, jsou také z tohoto čísla. Záznam si ho pamatuje.",
 		"setting.screenwidth": "Šířka obrazovky",

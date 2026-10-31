@@ -33,6 +33,9 @@
 #   teeth        the equivalence comparison sees a one-frame difference
 #   firmware     waterbox.config's firmware is the files the core opens, one a
 #                game
+#   names        no name (the core's, the engine's, a game's, a character's)
+#                is translated or has an ending put on it in any of the 26
+#                language tables (tests/check-names.py)
 #   origins      (with -1, -2, -c) the equivalence, rerecord and session
 #                tests on Sonic Origins' Sonic 1, Sonic 2 and Sonic CD data
 #                packs, which are never in the repository
@@ -249,6 +252,13 @@ if [ "$fw" = "Sonic1u.rsdk/sonic1 Sonic2u.rsdk/sonic2 SonicCDu.rsdk/soniccd" ] &
 	pass "firmware: waterbox.config's three firmware files, one a game, are the names the core opens"
 else
 	fail "firmware: waterbox.config declares '$fw'"
+fi
+
+# names are never translated or bent (Chimera's owner, 2026-10-31)
+if python3 "$here/tests/check-names.py" "$here/languages" > "$work/names.txt" 2>&1; then
+	pass "names: $(tail -1 "$work/names.txt")"
+else
+	fail "names: a name is translated or bent in a language table"; head -20 "$work/names.txt"
 fi
 
 # Sonic Origins' own packs. The route is a guess made without the data: Start
