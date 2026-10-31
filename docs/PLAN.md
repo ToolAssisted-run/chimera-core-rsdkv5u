@@ -258,23 +258,32 @@ records the origin only when it is a repository on the network
 (https://... or git@...); tried with both (empty for the folder, the
 GitHub address for that).
 
-## Where this stands (2026-10-31)
+## Where this stands (2026-10-31, second round)
 
-Works, on the test games only: the core in both legacy modes, native and
-sandbox the same, savestates, input, lag, saves, properties, settings, the
-package, Chimera's window and chimera-run, the contract tests.
+The owner's decisions are in (above): a new core named rsdkv5u, the same
+licence terms as the other Retro Engine cores, sound and publishing after
+the Origins packs are tried. Every language table keeps names whole, and
+the gate checks it.
 
-Next:
+Works, on the test games only, retested with Chimera main cb46d2b7: the
+core in both of the engine's older modes, native and sandbox the same,
+savestates, input, lag, saves, properties, settings, the package,
+Chimera's window and chimera-run, the contract tests, and a build from a
+fresh clone. The gate: 27 passed, 0 failed, 3 skipped (the Origins packs).
 
-1. With the owner's Sonic Origins packs: run `run-gate.sh -1 -2 -c` and
-   `run-frontend.sh -d <pack> -g <game>`, look at the pictures
-   (`build/gate/<game>/f*.tga`), and replace the guessed routes with real
-   ones (title, menus, into the first zone). Confirm the file names and add
-   each pack's SHA-1 to waterbox.config.
+Waiting for the owner's Sonic Origins packs. Then:
+
+1. Run `run-gate.sh -1 -2 -c` and `run-frontend.sh -d <pack> -g <game>`,
+   look at the pictures (`build/gate/<game>/f*.tga`), and replace the
+   guessed routes with real ones (title, menus, into the first zone).
+   Confirm the file names and add each pack's SHA-1 to waterbox.config.
 2. Check what Origins' scripts ask of the host (the notify callbacks: the
    Origins menu, coins, missions) and whether the games reach play without
-   it; check that Player 1 and 2 are objects 0 and 1 in Origins' Sonic 1/2.
-3. Sound, if the packs are silent (question above).
-4. The tests on Windows (the frontend test's scenario on the Windows build).
-5. If the owner chooses a new public repository: CI is in
-   `.github/workflows/chimera.yml` (copied from rsdkv5, ids changed, not run).
+   it; check that players 1 and 2 are objects 0 and 1 in Origins' Sonic 1
+   and 2.
+3. Sound: the owner decides once the packs have been heard.
+4. The tests on Windows (the frontend test's scenario on the Windows
+   build); not run, this round had no Windows runs.
+5. Publishing, the owner's: a public repository, CI
+   (`.github/workflows/chimera.yml`, copied from rsdkv5, ids changed, never
+   run), a row in Chimera's official-cores.json and README.
