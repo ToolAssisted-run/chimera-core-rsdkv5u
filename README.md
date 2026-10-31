@@ -30,6 +30,8 @@ content (off by default), the random seed, and the engine's developer menu
 
 - Sonic Origins' own packs have not been tried; the tests run on two small
   games written for them.
+- The standalone 2013 and 2011 releases' packs are refused. Converted for
+  the tests, their games play from the developer menu (docs/PLAN.md).
 - Sound: Sonic Origins keeps most of its music and effects outside these
   packs.
 - Mods: the decompilation's mod loader is off.

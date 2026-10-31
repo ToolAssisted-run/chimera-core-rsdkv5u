@@ -61,7 +61,16 @@ only it:
 <chimera>/build/meson-linux/source/ui/test-packages <folder with the package>
 ```
 
-Without Sonic Origins' packs, both scripts run on the core's two test games
+The packs may also be given to run-gate.sh as RSDKV5U_SONIC1, RSDKV5U_SONIC2
+and RSDKV5U_SONICCD. The standalone releases' packs, which the core refuses
+as they come, are tested converted (`waterbox/tests/convert-pack.py`): set
+RSDKV5U_SONIC1_2013 and RSDKV5U_SONIC2_2013 to the 2013 releases' data.rsdk
+and RSDKV5U_SONICCD_2011 to the 2011 Sonic CD's data_mobile.rsdk, or give
+one to run-frontend.sh with `-d`. The real-game tests go through the
+engine's developer menu to the first stage (docs/PLAN.md, "The standalone
+packs").
+
+Without any pack, both scripts run on the core's two test games
 (`waterbox/tests/make-test-game.py`, made at test time): 100 frames of
 `waterbox/tests/test.movie` each. The tests on the real packs say SKIP
 without them. Keep the packs outside the repository, or in

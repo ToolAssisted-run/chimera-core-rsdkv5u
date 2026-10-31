@@ -24,7 +24,9 @@ provides them.
 - `waterbox/waterbox.config`, `file_slots.json`, `default_keybinds.json`,
   `package-licenses.json`, `languages/`: the declarations and texts.
 - `waterbox/run-gate.sh`: the core's tests. `waterbox/tests/`: the frontend
-  tests and `make-test-game.py`, the two test games (v4 and v3).
+  tests, `make-test-game.py`, the two test games (v4 and v3), and
+  `convert-pack.py`, which converts a standalone release's pack for the
+  tests only.
 - `build/`: every output. `tests/roms-local/`: game data, ignored by git.
 
 ## Commands, in order
@@ -33,6 +35,8 @@ provides them.
 git submodule update --init --recursive
 cd waterbox
 ./run-gate.sh -m <miniBox> [-1 <Sonic1u.rsdk>] [-2 <Sonic2u.rsdk>] [-c <SonicCDu.rsdk>]
+# the standalone releases' packs, converted by the test: RSDKV5U_SONIC1_2013,
+# RSDKV5U_SONIC2_2013 (data.rsdk), RSDKV5U_SONICCD_2011 (data_mobile.rsdk)
 ./tests/run-frontend.sh --chimera-root <chimera> -m <miniBox> [-d <pack> -g sonic1|sonic2|soniccd]
 ./build-package.sh -m <miniBox> -o <out dir>
 ```

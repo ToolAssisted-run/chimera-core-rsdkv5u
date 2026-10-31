@@ -258,6 +258,130 @@ records the origin only when it is a repository on the network
 (https://... or git@...); tried with both (empty for the folder, the
 GitHub address for that).
 
+## The standalone packs (2026-10-31, third round)
+
+The owner gave three packs of the standalone PC releases, not Sonic
+Origins': Sonic 1 (2013) and Sonic 2 (2013), each a data.rsdk for the
+Retro Engine v4, and Sonic CD (2011), for the v3, with data.rsdk,
+data_steam.rsdk (the same file), data_mobile.rsdk and four videos. Only the
+data files were taken from the zips; nothing else in them was run or
+extracted. These are the packs the published rsdkv4 and rsdkv3 cores play.
+
+**The core refuses them as they come**, all three with "not a Retro Engine
+data pack". The engine could not read them either:
+
+- v5U reads one file layout, the v5 one: "RSDK", "v", a version letter, a
+  table of files found by the MD5 of their names (`Reader.cpp`
+  LoadDataPack). `DetectEngineVersion` takes the version letter: 3, 4 or 5.
+- The 2013 packs are in that layout but headed "RSDKvB", which the engine
+  does not take for v4, and their files are encrypted with v4's keys (made
+  from each file's size); v5U decrypts with v5's (made from the file's
+  name). The engine read garbage and crashed in LoadGameConfig.
+- The 2011 Sonic CD packs have no header at all: the v3 engine's own layout
+  (folders, then files, names and data encrypted v3's way). v5U has no
+  reader for it.
+- Sonic CD's PC packs (data.rsdk, data_steam.rsdk) hold the scripts in the
+  PC form (Data/Scripts/ByteCode/GS000.bin and the rest). v5U's v3 mode
+  reads only the mobile form (GlobalCode.bin and a file a stage), so even
+  converted they show a black screen. data_mobile.rsdk has the mobile form.
+
+**Converted for the tests, they play.** `waterbox/tests/convert-pack.py`
+rewrites a pack in the v5 layout with every file decrypted. The core then
+takes the copy (headed RSDKv4 or RSDKv3) like any pack. What was seen, by
+eye, frame by frame, on the copies of Sonic 1 (2013), Sonic 2 (2013) and
+Sonic CD's data_mobile.rsdk:
+
+- Each boots: the SEGA screen, the games' logos, the title, and left alone
+  the attract demos (Green Hill and Marble Zone in Sonic 1, Palmtree Panic
+  in Sonic CD).
+- **The title does not lead into the game.** Start and A at the title do
+  nothing in Sonic 1 and 2; in Sonic CD the "TOUCH TO START" text goes and
+  the title stays. The releases' menus are their own engines' code (the
+  2013 remasters' menus are native objects of the v4 engine, as the rsdkv4
+  core's notes say), which v5U does not have: in Sonic Origins its own
+  program shows the menus.
+- **The developer menu reaches play** (the Developer Menu setting on): Dev
+  Menu, Stage Select, Regular, the first stage. Green Hill Zone 1, Emerald
+  Hill Zone 1 and Palmtree Panic Zone 1 were played running right with
+  jumps: the title card, the stage, rings, enemies, the camera following.
+  The developer menu also draws the player's position in a corner.
+- Sonic CD's mobile pack draws touch controls (a pad and a button) over the
+  stage and its title says "TOUCH TO START": it is the mobile release's
+  data.
+- **Sound.** All three carry their own music and effects, and the core
+  plays them: in each 30-second run the sound level (RMS, of 32767) is
+  850 to 9000 in each second of the SEGA screen, the title and the stage,
+  with silent stretches of a few seconds between (the logos, the
+  developer menu, a stage's load). Measured, not listened to.
+- **Videos.** Not played. They are files beside Sonic CD's packs
+  (videos/*.ogv); the engine looks for Data/Video/<name>.ogv through its
+  file layer, and the core gives it only the pack. In a test copy of the
+  mobile pack with the four videos added under Data/Video, 4000 frames left
+  on the title went to the attract demo, and the engine never asked for a
+  video in the first 2400 (a breakpoint on LoadVideo in the native build).
+  Whether the core plays a video was not shown.
+
+Measured with Chimera main cb46d2b7 on the converted copies, 1800 frames of
+the developer-menu route:
+
+- `run-gate.sh` (RSDKV5U_SONIC1_2013, RSDKV5U_SONIC2_2013,
+  RSDKV5U_SONICCD_2011 set): 42 passed, 0 failed, 3 skipped (Sonic
+  Origins' packs). For each: the release's pack refused as it comes; the
+  copy native = sandbox (picture, sound, frame lengths, lag, memory);
+  rerecord = straight (states 15.6, 14.0 and 10.4 MB); a session at frame
+  1620 = straight; in a stage, player 1 ran 1819, 2317 and 1566 pixels
+  after frame 1000, sound in the last ten seconds. With Sonic CD's PC pack
+  in place of the mobile one the new check failed (no stage running, no
+  sound), as it should.
+- `run-frontend.sh -d <pack> -g <game>`: 10 passed, 0 failed, 1 skipped
+  (the test game's globals) for each. The route as a movie made into a
+  project by chimera-run and replayed in a new process ends with the
+  reference's Game State, Players and picture; the same project opened in
+  Chimera's window (headless) too; the stage timer in the saved project
+  (00:11.180, 00:11.680, 00:12.200); game.list (135, 173, 144 properties
+  with each game's globals).
+- The test-game runs, Chimera's contract tests (21 passed, 0 failed),
+  check-core-texts.py, check-names.py and check-proper-nouns.py: all pass.
+
+A trap found on the way: chimera-run read a movie with no LogKey by
+position, and the Dev Menu column was lost, so the replay stayed on the
+title. make-project.py now gives that movie its LogKey.
+
+Not decided, and not changed: whether the core should take these packs
+(see "Where this stands").
+
+## Where this stands (2026-10-31, third round)
+
+The core is unchanged: it plays packs in the v5 layout, as Sonic Origins'
+are, and refuses the standalone releases' packs as they come. Sonic
+Origins' own packs have still not been given or tried, so nothing is known
+yet of the Origins games themselves.
+
+What this round proved, on the owner's 2013 and 2011 packs converted for
+the tests (above): the engine, in this core, plays real Sonic 1, Sonic 2
+and Sonic CD data in its v4 and v3 modes, with their sound, the same in the
+sandbox as natively, with savestates, rerecording, sessions, Chimera's
+window and chimera-run. Reached through the developer menu only: the
+releases' menus are not in v5U. Sonic CD's PC data and its videos do not
+play.
+
+Open, for the owner:
+
+1. Whether this core should take the standalone packs (the question in
+   this round's report). Doing it would mean converting them in the core
+   at load (the test script's work), and the games would still start only
+   from the developer menu, with Sonic CD only from its mobile pack. The
+   rsdkv4 and rsdkv3 cores already play these packs with their menus.
+2. Sonic Origins' packs: then `run-gate.sh -1 -2 -c` (or RSDKV5U_SONIC1,
+   _SONIC2, _SONICCD) and `run-frontend.sh -d <pack> -g <game>`, the
+   developer-menu route. See whether Origins' title leads into a game
+   without Origins' program, confirm the file names, add the SHA-1s to
+   waterbox.config, and decide the sound (Origins' packs have no music).
+3. The tests on Windows; not run (no Windows runs this round).
+4. Publishing, the owner's, after 2.
+
+The second round's hand-over follows, for the record.
+
 ## Where this stands (2026-10-31, second round)
 
 The owner's decisions are in (above): a new core named rsdkv5u, the same
