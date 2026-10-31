@@ -1,0 +1,81 @@
+diff --git a/RSDKv5/RSDK/Core/Legacy/v3/RetroEnginev3.cpp b/RSDKv5/RSDK/Core/Legacy/v3/RetroEnginev3.cpp
+index 799adff..8b039a1 100644
+--- a/RSDKv5/RSDK/Core/Legacy/v3/RetroEnginev3.cpp
++++ b/RSDKv5/RSDK/Core/Legacy/v3/RetroEnginev3.cpp
+@@ -169,7 +169,12 @@ bool32 RSDK::Legacy::v3::LoadGameConfig(const char *filepath)
+         v3::LoadGameXML();
+         SetGlobalVariableByName("Options.DevMenuFlag", engine.devMenu ? 1 : 0);
+         SetGlobalVariableByName("Engine.Standalone", 0);
++        // Chimera: on autobuilds the DLC follows the project's setting, off by default
++#if RSDK_AUTOBUILD
++        SetGlobalVariableByName("game.hasPlusDLC", RSDK::SKU::chimeraPlusSetting ? 1 : 0);
++#else
+         SetGlobalVariableByName("game.hasPlusDLC", !RSDK_AUTOBUILD);
++#endif
+ #endif
+ 
+         SetGlobalVariableByName("Engine.PlatformId", gamePlatformID);
+diff --git a/RSDKv5/RSDK/Core/Legacy/v4/RetroEnginev4.cpp b/RSDKv5/RSDK/Core/Legacy/v4/RetroEnginev4.cpp
+index 676746f..ec0ca01 100644
+--- a/RSDKv5/RSDK/Core/Legacy/v4/RetroEnginev4.cpp
++++ b/RSDKv5/RSDK/Core/Legacy/v4/RetroEnginev4.cpp
+@@ -175,7 +175,12 @@ bool32 RSDK::Legacy::v4::LoadGameConfig(const char *filepath)
+         SetGlobalVariableByName("engine.standalone", 0);
+ #endif
+ 
++        // Chimera: on autobuilds the DLC follows the project's setting, off by default
++#if RSDK_AUTOBUILD
++        SetGlobalVariableByName("game.hasPlusDLC", RSDK::SKU::chimeraPlusSetting ? 1 : 0);
++#else
+         SetGlobalVariableByName("game.hasPlusDLC", !RSDK_AUTOBUILD);
++#endif
+ 
+         usingBytecode = false;
+         InitFileInfo(&info);
+diff --git a/RSDKv5/RSDK/Scene/Legacy/v3/CollisionLegacyv3.cpp b/RSDKv5/RSDK/Scene/Legacy/v3/CollisionLegacyv3.cpp
+index 70b87ec..9e592fa 100644
+--- a/RSDKv5/RSDK/Scene/Legacy/v3/CollisionLegacyv3.cpp
++++ b/RSDKv5/RSDK/Scene/Legacy/v3/CollisionLegacyv3.cpp
+@@ -3029,7 +3029,9 @@ void RSDK::Legacy::v3::EnemyCollision(int32 left, int32 top, int32 right, int32
+ 
+ #if RSDK_AUTOBUILD
+     // Skip the hammer hitboxes on autobuilds, just in case
+-    return;
++    // (Chimera: unless the project's DLC setting, off by default, is on)
++    if (!RSDK::SKU::chimeraPlusSetting)
++        return;
+ #endif
+ 
+     Player *player           = &playerList[activePlayer];
+diff --git a/RSDKv5/RSDK/Scene/Legacy/v3/SceneLegacyv3.cpp b/RSDKv5/RSDK/Scene/Legacy/v3/SceneLegacyv3.cpp
+index 2f80cb7..3f8f578 100644
+--- a/RSDKv5/RSDK/Scene/Legacy/v3/SceneLegacyv3.cpp
++++ b/RSDKv5/RSDK/Scene/Legacy/v3/SceneLegacyv3.cpp
+@@ -68,7 +68,10 @@ void RSDK::Legacy::v3::ProcessStage()
+ 
+ #if RSDK_AUTOBUILD
+             // Prevent playing as Knuckles or Amy if on autobuilds
+-            if (GetGlobalVariableByName("PLAYER_KNUCKLES") && playerListPos == GetGlobalVariableByName("PLAYER_KNUCKLES"))
++            // (Chimera: unless the project's DLC setting, off by default, is on)
++            if (RSDK::SKU::chimeraPlusSetting) {
++            }
++            else if (GetGlobalVariableByName("PLAYER_KNUCKLES") && playerListPos == GetGlobalVariableByName("PLAYER_KNUCKLES"))
+                 playerListPos = 0;
+             else if (GetGlobalVariableByName("PLAYER_KNUCKLES_TAILS") && playerListPos == GetGlobalVariableByName("PLAYER_KNUCKLES_TAILS"))
+                 playerListPos = 0;
+diff --git a/RSDKv5/RSDK/Scene/Legacy/v4/SceneLegacyv4.cpp b/RSDKv5/RSDK/Scene/Legacy/v4/SceneLegacyv4.cpp
+index 7db39c8..260a515 100644
+--- a/RSDKv5/RSDK/Scene/Legacy/v4/SceneLegacyv4.cpp
++++ b/RSDKv5/RSDK/Scene/Legacy/v4/SceneLegacyv4.cpp
+@@ -60,7 +60,10 @@ void RSDK::Legacy::v4::ProcessStage(void)
+ 
+ #if RSDK_AUTOBUILD
+             // Prevent playing as Amy if on autobuilds
+-            if (GetGlobalVariableByName("PLAYER_AMY") && playerListPos == GetGlobalVariableByName("PLAYER_AMY"))
++            // (Chimera: unless the project's DLC setting, off by default, is on)
++            if (RSDK::SKU::chimeraPlusSetting) {
++            }
++            else if (GetGlobalVariableByName("PLAYER_AMY") && playerListPos == GetGlobalVariableByName("PLAYER_AMY"))
+                 playerListPos = 0;
+             else if (GetGlobalVariableByName("PLAYER_AMY_TAILS") && playerListPos == GetGlobalVariableByName("PLAYER_AMY_TAILS"))
+                 playerListPos = 0;

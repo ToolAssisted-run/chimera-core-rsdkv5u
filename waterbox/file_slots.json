@@ -1,0 +1,15 @@
+{
+  "_comment": "This file lists the kinds of file a project of this core can hold. A project supplies the game's data pack as firmware (one a game, in waterbox.config); the one slot is the game's saves.",
+  "slots": [
+    {
+      "id": "savedata",
+      "title": "slot.savedata",
+      "min": 0,
+      "max": 8,
+      "formats": [
+        "bin"
+      ],
+      "help": "slot.savedata.legacy_help"
+    }
+  ]
+}

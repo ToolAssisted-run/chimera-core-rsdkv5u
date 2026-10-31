@@ -1,0 +1,31 @@
+diff --git a/RSDKv5/RSDK/Input/Input.cpp b/RSDKv5/RSDK/Input/Input.cpp
+index c619d40..2036650 100644
+--- a/RSDKv5/RSDK/Input/Input.cpp
++++ b/RSDKv5/RSDK/Input/Input.cpp
+@@ -191,8 +191,13 @@ void RSDK::ClearInput()
+     }
+ }
+ 
++// Chimera: how many times the controls were read, so the core can tell a
++// frame that read them from one that did not (a lag frame)
++uint32 RSDK::chimeraInputReads = 0;
++
+ void RSDK::ProcessInput()
+ {
++    ++chimeraInputReads;
+     ClearInput();
+ 
+     bool32 anyPress = false;
+diff --git a/RSDKv5/RSDK/Input/Input.hpp b/RSDKv5/RSDK/Input/Input.hpp
+index a49620d..120efb9 100644
+--- a/RSDKv5/RSDK/Input/Input.hpp
++++ b/RSDKv5/RSDK/Input/Input.hpp
+@@ -510,6 +510,8 @@ void InitInputDevices();
+ void ClearInput();
+ // Processes the state of the input devices & parses that as data that RSDK can use
+ void ProcessInput();
++// Chimera: counts the calls of ProcessInput
++extern uint32 chimeraInputReads;
+ // used to process various events on input devices, switch uses it to controller connects/disconnects/changes
+ void ProcessInputDevices();
+ // Releases the input devices & closes the backend APIs powering em
