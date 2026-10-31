@@ -86,7 +86,10 @@ Chimera's `publish-core.yml`. It has not been run: the repository is local.
 ## Troubleshooting
 
 - "not a Retro Engine data pack": the file does not start with RSDKv3,
-  RSDKv4 or RSDKv5.
+  RSDKv4 or RSDKv5. A pack of the 2011 Sonic CD release has no header and
+  gets this text, which names the rsdkv3 core.
+- "a data pack of the 2013 release": the file starts with RSDKvB, as the
+  2013 Sonic 1 and Sonic 2 packs do. The rsdkv4 core plays it.
 - "a Retro Engine v5 data pack": a v5 game (Sonic Mania, Sonic 3 &
   Knuckles) needs its logic as a program; this core plays v3 and v4 games.
 - An edit to an engine .cpp that another one includes does not rebuild:

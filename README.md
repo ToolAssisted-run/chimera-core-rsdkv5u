@@ -30,8 +30,9 @@ content (off by default), the random seed, and the engine's developer menu
 
 - Sonic Origins' own packs have not been tried; the tests run on two small
   games written for them.
-- The standalone 2013 and 2011 releases' packs are refused. Converted for
-  the tests, their games play from the developer menu (docs/PLAN.md).
+- The standalone releases' packs are refused, and the refusal names the
+  core that plays them: rsdkv4 for Sonic 1 and Sonic 2 (2013), rsdkv3 for
+  Sonic CD (2011).
 - Sound: Sonic Origins keeps most of its music and effects outside these
   packs.
 - Mods: the decompilation's mod loader is off.

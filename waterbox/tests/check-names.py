@@ -33,7 +33,7 @@ folder = sys.argv[1] if len(sys.argv) > 1 else os.path.join(here, "..", "languag
 # coreName, the engine, the games, their characters, the company
 NAMES = ["Chimera", "TAStudio", "GitHub", "Lua", "Windows", "Linux", "macOS", "OpenGL", "Vulkan", "Direct3D", "SQLite",
          "Sublime Text", "miniBox", "ffmpeg", "Qt", "Wayland",
-         "rsdkv5u", "Retro Engine", "RSDKv3", "RSDKv4", "RSDKv5",
+         "rsdkv5u", "rsdkv4", "rsdkv3", "Retro Engine", "RSDKv3", "RSDKv4", "RSDKv5",
          "Sonic Origins", "Origins Plus", "Origins", "Sonic the Hedgehog", "Sonic 1", "Sonic 2", "Sonic CD", "Sonic",
          "Amy", "Knuckles", "Tails", "Evening Star", "Sega", "SDL"]
 LATIN = "A-Za-z\u00c0-\u024f"

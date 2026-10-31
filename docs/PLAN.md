@@ -350,6 +350,77 @@ title. make-project.py now gives that movie its LogKey.
 Not decided, and not changed: whether the core should take these packs
 (see "Where this stands").
 
+## The standalone packs stay refused (user-decided, 2026-10-31)
+
+The question the third round put to the owner: should this core take the
+packs of the standalone releases (Sonic 1 and Sonic 2 of 2013, Sonic CD of
+2011), converting them when the game loads? The owner's answer: no. The
+core keeps refusing them, and `waterbox/tests/convert-pack.py` stays a
+tool of the tests only, until Sonic Origins' own packs have been given and
+tried. Why: the rsdkv4 and rsdkv3 cores already play these packs, with the
+releases' own menus; in this core they would start only from the developer
+menu, and Sonic CD only from its mobile pack.
+
+What changed: the refusal now tells the user which core plays the pack.
+
+- A pack that starts with "RSDKvB" (the 2013 Sonic 1 and Sonic 2) has its
+  own text (`error.pack_is_from_2013_release`): it is a pack of the 2013
+  release, this core plays only Sonic Origins' packs, and the rsdkv4 core
+  plays this one.
+- The 2011 Sonic CD packs have no header, so the core cannot tell one from
+  any other file that is not a pack. The text for a file that is not a
+  pack (`error.is_not_a_retro_engine_pack`) now goes on: this core plays
+  only Sonic Origins' packs, and if the file is a pack of the 2011 Sonic CD
+  release, the rsdkv3 core plays it.
+- Both texts are in all 26 tables; the new sentences were translated by
+  Claude and have not been read by speakers of each language. They keep
+  every name whole: where a grammar would put an ending on a core's name,
+  the sentence puts the common noun first ("ydin rsdkv4", "Kernen
+  rsdkv4"). rsdkv4 and rsdkv3 are now in check-names.py's list of names.
+
+Measured with Chimera main cb46d2b7:
+
+- `run-gate.sh` with the three releases' packs (RSDKV5U_SONIC1_2013,
+  RSDKV5U_SONIC2_2013, RSDKV5U_SONICCD_2011): 44 passed, 0 failed, 3
+  skipped (Sonic Origins' packs, not given). Two tests are new and run
+  without any game: a test game headed "RSDKvB" is refused with the 2013
+  text (both builds), and the English texts name rsdkv4 and rsdkv3. The
+  releases' packs as they come: Sonic 1 and Sonic 2 refused with the 2013
+  text, Sonic CD with the not-a-pack text; their converted copies play as
+  before.
+- Broken on purpose and seen to fail: with the core looking for "RSDKvX"
+  in place of "RSDKvB" the new refusal test failed; with rsdkv4 taken out
+  of the Finnish text the names test failed on it (2 failed). Both put
+  back, and the gate passed again.
+- `run-frontend.sh`: 11 of 11 on the test games; 10 passed, 0 failed, 1
+  skipped (the test game's globals) on each of the three releases' packs.
+- Chimera's contract tests on a folder holding only the package: 21
+  passed, 0 failed. tools/check-core-texts.py (48 keys), check-names.py
+  and Chimera's check-proper-nouns.py: all pass.
+
+## Where this stands (2026-10-31, fourth round)
+
+The core plays packs in the v5 layout, as Sonic Origins' are, and refuses
+the standalone releases' packs, now saying which core plays each (rsdkv4
+for the 2013 Sonic 1 and Sonic 2, rsdkv3 for the 2011 Sonic CD). This is
+the owner's decision of 2026-10-31 (above); the converter is a test tool
+only. Sonic Origins' own packs have still not been given or tried, so
+nothing is known yet of the Origins games themselves.
+
+Open, for the owner:
+
+1. Sonic Origins' packs: then `run-gate.sh -1 -2 -c` (or RSDKV5U_SONIC1,
+   _SONIC2, _SONICCD) and `run-frontend.sh -d <pack> -g <game>`, the
+   developer-menu route. See whether Origins' title leads into a game
+   without Origins' program, confirm the file names, add the SHA-1s to
+   waterbox.config, and decide the sound (Origins' packs have no music).
+   Whether the core should then take the standalone packs too is decided
+   after that.
+2. The tests on Windows; not run (no Windows runs this round).
+3. Publishing, the owner's, after 1.
+
+The third round's hand-over follows, for the record.
+
 ## Where this stands (2026-10-31, third round)
 
 The core is unchanged: it plays packs in the v5 layout, as Sonic Origins'

@@ -184,7 +184,16 @@ static int read_pack(const struct rsdk_settings *s, char *err, int errsize)
 	/* the engine takes a file that is not a pack for no data at all and
 	 * starts its developer menu: the core refuses it instead. The pack is
 	 * the v5 engine's layout; its header names the engine version whose
-	 * game it holds. */
+	 * game it holds. The standalone releases' packs are refused with the
+	 * core that plays them (user-decided, 2026-10-31; docs/PLAN.md): the
+	 * 2013 Sonic 1 and 2 start with "RSDKvB", files encrypted v4's way
+	 * (rsdkv4); the 2011 Sonic CD has no header at all (rsdkv3), which the
+	 * text for a file that is not a pack names. */
+	if (memcmp(g_pack, "RSDKvB", 6) == 0)
+	{
+		snprintf(err, (size_t)errsize, "error.pack_is_from_2013_release" TEXT_ARG "%s", name);
+		return 0;
+	}
 	if (memcmp(g_pack, "RSDKv", 5) != 0 || g_pack[5] < '3' || g_pack[5] > '5')
 	{
 		snprintf(err, (size_t)errsize, "error.is_not_a_retro_engine_pack" TEXT_ARG "%s", name);

@@ -222,17 +222,31 @@ refuse() { # refuse <dir> <expected text> <what>
 		fail "refusals: $3"; echo "$out" | tail -2
 	fi
 }
-mkdir -p "$work/none" "$work/junk" "$work/v5"
+mkdir -p "$work/none" "$work/junk" "$work/v5" "$work/vB"
 printf '{"game": "sonic1"}' > "$work/none/settings"
 head -c 100000 /dev/zero > "$work/junk/Sonic1u.rsdk"
 printf '{"game": "sonic1"}' > "$work/junk/settings"
 python3 "$here/tests/make-test-game.py" v4 "$work/v5/Sonic1u.rsdk"
 printf 'RSDKv5' | dd of="$work/v5/Sonic1u.rsdk" conv=notrunc 2>/dev/null
 printf '{"game": "sonic1"}' > "$work/v5/settings"
+# a pack headed as the 2013 releases' are (their files are encrypted v4's way)
+python3 "$here/tests/make-test-game.py" v4 "$work/vB/Sonic1u.rsdk"
+printf 'RSDKvB' | dd of="$work/vB/Sonic1u.rsdk" conv=notrunc 2>/dev/null
+printf '{"game": "sonic1"}' > "$work/vB/settings"
 mkgame wide v4 '{"game": "sonic1", "screenWidth": 640}'
 refuse none "error.game_s_data_file_missing.Sonic1u.rsdk" "no data file"
 refuse junk "error.is_not_a_retro_engine_pack" "a file of zeros"
 refuse v5 "error.pack_is_not_v3_or_v4.Sonic1u.rsdk.5" "a v5 pack"
+refuse vB "error.pack_is_from_2013_release.Sonic1u.rsdk" "a pack headed RSDKvB, as the 2013 releases' are"
+# the standalone releases' packs are refused with the core that plays them
+# (user-decided, 2026-10-31): the English texts name it, and the names check
+# (below) holds every language to the names its English text has
+en="$here/languages/en.json"
+if python3 -c "import json, sys; t = json.load(open(sys.argv[1]))['texts']; sys.exit(not ('rsdkv4' in t['error.pack_is_from_2013_release'] and 'rsdkv3' in t['error.is_not_a_retro_engine_pack']))" "$en"; then
+	pass "refusals: the 2013 releases' refusal names rsdkv4, the 2011 Sonic CD's (not a pack) names rsdkv3"
+else
+	fail "refusals: a standalone release's refusal does not name the core that plays it"
+fi
 refuse wide "error.setting_screenwidth_is_it" "screenWidth 640"
 
 echo "== clock"
@@ -309,17 +323,18 @@ origins() { # origins <name> <setting> <firmware name> <file>: Sonic Origins' pa
 	[ -n "$4" ] || { echo "SKIP $1: no data pack given (-1, -2, -c or RSDKV5U_SONIC1, _SONIC2, _SONICCD); it is never in the repository"; return; }
 	play "$@"
 }
-# standalone <name> <setting> <firmware name> <variable> <file>: a pack of the
-# 2013 or 2011 release. The core refuses it as it comes; the test converts it
-# (tests/convert-pack.py) and plays the copy.
+# standalone <name> <setting> <firmware name> <variable> <refusal> <file>: a
+# pack of the 2013 or 2011 release. The core refuses it as it comes, naming
+# the core that plays it; the test converts it (tests/convert-pack.py) and
+# plays the copy.
 standalone() {
-	[ -n "$5" ] || { echo "SKIP $1: no data pack given ($4); it is never in the repository"; return; }
+	[ -n "$6" ] || { echo "SKIP $1: no data pack given ($4); it is never in the repository"; return; }
 	d="$work/$2-raw"
 	mkdir -p "$d"
-	cp "$5" "$d/$3"
+	cp "$6" "$d/$3"
 	printf '{"game": "%s"}' "$2" > "$d/settings"
-	refuse "$2-raw" "error.is_not_a_retro_engine_pack" "$1 as the release has it"
-	python3 "$here/tests/convert-pack.py" "$5" "$work/$2-raw/converted" > /dev/null || { fail "$1: the pack did not convert"; return; }
+	refuse "$2-raw" "$5" "$1 as the release has it"
+	python3 "$here/tests/convert-pack.py" "$6" "$work/$2-raw/converted" > /dev/null || { fail "$1: the pack did not convert"; return; }
 	play "$1, converted for the test" "$2" "$3" "$work/$2-raw/converted"
 }
 sonic1="${sonic1:-${RSDKV5U_SONIC1:-}}"
@@ -328,9 +343,9 @@ soniccd="${soniccd:-${RSDKV5U_SONICCD:-}}"
 origins "Sonic 1 (Sonic Origins)" sonic1 Sonic1u.rsdk "$sonic1"
 origins "Sonic 2 (Sonic Origins)" sonic2 Sonic2u.rsdk "$sonic2"
 origins "Sonic CD (Sonic Origins)" soniccd SonicCDu.rsdk "$soniccd"
-standalone "Sonic 1 (2013)" sonic1 Sonic1u.rsdk RSDKV5U_SONIC1_2013 "${RSDKV5U_SONIC1_2013:-}"
-standalone "Sonic 2 (2013)" sonic2 Sonic2u.rsdk RSDKV5U_SONIC2_2013 "${RSDKV5U_SONIC2_2013:-}"
-standalone "Sonic CD (2011)" soniccd SonicCDu.rsdk RSDKV5U_SONICCD_2011 "${RSDKV5U_SONICCD_2011:-}"
+standalone "Sonic 1 (2013)" sonic1 Sonic1u.rsdk RSDKV5U_SONIC1_2013 error.pack_is_from_2013_release "${RSDKV5U_SONIC1_2013:-}"
+standalone "Sonic 2 (2013)" sonic2 Sonic2u.rsdk RSDKV5U_SONIC2_2013 error.pack_is_from_2013_release "${RSDKV5U_SONIC2_2013:-}"
+standalone "Sonic CD (2011)" soniccd SonicCDu.rsdk RSDKV5U_SONICCD_2011 error.is_not_a_retro_engine_pack "${RSDKV5U_SONICCD_2011:-}"
 
 echo
 if [ $fails -eq 0 ]; then
