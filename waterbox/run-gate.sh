@@ -38,9 +38,16 @@
 #                language tables (tests/check-names.py)
 #   origins      (with -1, -2, -c) the equivalence, rerecord and session
 #                tests on Sonic Origins' Sonic 1, Sonic 2 and Sonic CD data
-#                packs, which are never in the repository
+#                packs, which are never in the repository, and that each
+#                reaches a stage and runs in it with sound
+#   standalone   (with RSDKV5U_SONIC1_2013, RSDKV5U_SONIC2_2013: the 2013
+#                releases' data.rsdk; RSDKV5U_SONICCD_2011: the 2011 Sonic
+#                CD's data_mobile.rsdk) the pack as it comes is refused; a
+#                copy converted by tests/convert-pack.py gets the same tests
+#                as the Origins packs
 #
 # usage: run-gate.sh -m <miniBox dir> [-1 <Sonic1u.rsdk>] [-2 <Sonic2u.rsdk>] [-c <SonicCDu.rsdk>]
+# (the packs may also be given as RSDKV5U_SONIC1, RSDKV5U_SONIC2, RSDKV5U_SONICCD)
 set -eu
 here="$(cd "$(dirname "$0")" && pwd)"
 root="$(cd "$here/.." && pwd)"
@@ -261,32 +268,69 @@ else
 	fail "names: a name is translated or bent in a language table"; head -20 "$work/names.txt"
 fi
 
-# Sonic Origins' own packs. The route is a guess made without the data: Start
-# and A now and then through the title and the menus, then right and jumps.
-route="--press 600:S:5 --press 900:S:5 --press 1200:A:5 --press 1500:S:5 --press 1800:A:5 \
-	--press 2100:R:900 --press 2400:A:10 --press 2700:A:10"
-origins() { # origins <name> <setting> <firmware name> <file>
-	[ -n "$4" ] || { echo "SKIP $1: no data pack given; it is never in the repository"; return; }
+# Real games. None is in the repository: each test takes the pack's path
+# from an option or an environment variable and says SKIP without it.
+#
+# The route is the engine's developer menu (the developer menu setting on):
+# Dev Menu, Stage Select, Regular, the first stage, then right with jumps.
+# The 2013 and 2011 releases' title leads into their own engines' menus,
+# which v5U does not have (docs/PLAN.md, "The standalone packs"); the
+# developer menu reaches a stage in any pack.
+route="--press 700:E:3 --press 740:D:3 --press 760:D:3 --press 780:A:3 --press 820:D:3 --press 840:A:3 --press 880:A:3 \
+	--press 1000:R:700 --press 1150:A:10 --press 1400:A:10 --press 1500:A:10"
+play() { # play <name> <setting> <firmware name> <pack the core takes>
 	echo "== $1 ($4)"
 	d="$work/$2"
 	mkdir -p "$d"
 	cp "$4" "$d/$3"
-	printf '{"game": "%s"}' "$2" > "$d/settings"
-	gn=3000
-	gat=$((gn * 9 / 10))
-	"$native" "$d" --frames $gn $route --trace "$d/t" --trace-props "Engine.Version,Stage.Category,Stage.List Position" \
-		--screenshot 300:"$d/f300.tga" --screenshot 1000:"$d/f1000.tga" --screenshot 2900:"$d/f2900.tga" > "$d/n"
+	printf '{"game": "%s", "devMenu": true}' "$2" > "$d/settings"
+	gn=1800
+	gat=1620
+	"$native" "$d" --frames $gn $route --trace "$d/t" --trace-props "Engine.Version,Stage.Category,Player 1.X" \
+		--screenshot 870:"$d/f870.tga" --screenshot 1300:"$d/f1300.tga" --screenshot 1790:"$d/f1790.tga" --audio "$d/pcm" > "$d/n"
 	"$wbx" "$core" "$d" --frames $gn $route > "$d/w" 2>/dev/null
-	stage="$(tail -1 "$d/t" | awk '{ print "v" $4 ", list " $5 "/" $6 }')"
-	same "$1" "$d/w" "$d/n" "native = sandbox, $gn frames (at the end: $stage)"
-	"$wbx" "$core" "$d" --frames $gn $route --rerecord > "$d/r" 2>/dev/null
-	same "$1" "$d/r" "$d/w" "rerecord = straight"
+	same "$1" "$d/w" "$d/n" "native = sandbox, $gn frames"
+	# in a stage (category 1, Regular) and run on: Player 1.X (16.16) at the
+	# end at least 500 pixels past where it was at frame 1000; the last ten
+	# seconds not silent
+	x0="$(at "$d/t" 1000 3)"; x1="$(at "$d/t" 1799 3)"; cat="$(at "$d/t" 1799 2)"
+	loud="$(python3 -c "import array, math, sys; a = array.array('h', open(sys.argv[1], 'rb').read())[-441000:]; print(int(math.sqrt(sum(v * v for v in a[::5]) / max(1, len(a[::5])))))" "$d/pcm")"
+	if [ "$cat" = 1 ] && [ $(( (x1 - x0) >> 16 )) -ge 500 ] && [ "$loud" -ge 500 ]; then
+		pass "$1: v$(at "$d/t" 1799 1) mode, in a stage, Player 1 ran $(( (x1 - x0) >> 16 )) pixels from frame 1000; sound level $loud in the last ten seconds"
+	else
+		fail "$1: category $cat, Player 1.X $x0 -> $x1, sound level $loud (pictures in $d)"
+	fi
+	"$wbx" "$core" "$d" --frames $gn $route --rerecord > "$d/r" 2>"$d/rerr"
+	same "$1" "$d/r" "$d/w" "rerecord = straight ($(sed -n 's/stateBytes=//p' "$d/rerr") state bytes)"
 	"$wbx" "$core" "$d" --frames $gn $route --session-at $gat > "$d/s" 2>/dev/null
 	same "$1" "$d/s" "$d/w" "session at $gat = straight"
 }
-origins "Sonic 1" sonic1 Sonic1u.rsdk "$sonic1"
-origins "Sonic 2" sonic2 Sonic2u.rsdk "$sonic2"
-origins "Sonic CD" soniccd SonicCDu.rsdk "$soniccd"
+origins() { # origins <name> <setting> <firmware name> <file>: Sonic Origins' packs, as the core takes them
+	[ -n "$4" ] || { echo "SKIP $1: no data pack given (-1, -2, -c or RSDKV5U_SONIC1, _SONIC2, _SONICCD); it is never in the repository"; return; }
+	play "$@"
+}
+# standalone <name> <setting> <firmware name> <variable> <file>: a pack of the
+# 2013 or 2011 release. The core refuses it as it comes; the test converts it
+# (tests/convert-pack.py) and plays the copy.
+standalone() {
+	[ -n "$5" ] || { echo "SKIP $1: no data pack given ($4); it is never in the repository"; return; }
+	d="$work/$2-raw"
+	mkdir -p "$d"
+	cp "$5" "$d/$3"
+	printf '{"game": "%s"}' "$2" > "$d/settings"
+	refuse "$2-raw" "error.is_not_a_retro_engine_pack" "$1 as the release has it"
+	python3 "$here/tests/convert-pack.py" "$5" "$work/$2-raw/converted" > /dev/null || { fail "$1: the pack did not convert"; return; }
+	play "$1, converted for the test" "$2" "$3" "$work/$2-raw/converted"
+}
+sonic1="${sonic1:-${RSDKV5U_SONIC1:-}}"
+sonic2="${sonic2:-${RSDKV5U_SONIC2:-}}"
+soniccd="${soniccd:-${RSDKV5U_SONICCD:-}}"
+origins "Sonic 1 (Sonic Origins)" sonic1 Sonic1u.rsdk "$sonic1"
+origins "Sonic 2 (Sonic Origins)" sonic2 Sonic2u.rsdk "$sonic2"
+origins "Sonic CD (Sonic Origins)" soniccd SonicCDu.rsdk "$soniccd"
+standalone "Sonic 1 (2013)" sonic1 Sonic1u.rsdk RSDKV5U_SONIC1_2013 "${RSDKV5U_SONIC1_2013:-}"
+standalone "Sonic 2 (2013)" sonic2 Sonic2u.rsdk RSDKV5U_SONIC2_2013 "${RSDKV5U_SONIC2_2013:-}"
+standalone "Sonic CD (2011)" soniccd SonicCDu.rsdk RSDKV5U_SONICCD_2011 "${RSDKV5U_SONICCD_2011:-}"
 
 echo
 if [ $fails -eq 0 ]; then

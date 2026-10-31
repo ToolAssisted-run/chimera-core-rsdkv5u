@@ -39,7 +39,7 @@ def inputs_of(log):
     return out
 
 LETTERS = {"Up": "U", "Down": "D", "Left": "L", "Right": "R", "A": "A", "B": "B", "C": "C",
-           "X": "X", "Y": "Y", "Z": "Z", "Start": "S", "Select": "s"}
+           "X": "X", "Y": "Y", "Z": "Z", "Start": "S", "Select": "s", "Dev Menu": "E"}
 
 
 def sha1(path):
@@ -66,20 +66,29 @@ def main():
     settings = {d["name"]: d["default"] for d in cfg["settings"]}
     settings.update(json.loads(a.settings))
     buttons = cfg["input"]["buttons"]
-    groups = [[b for b in buttons if b.startswith("P1 ")], [b for b in buttons if b.startswith("P2 ")]]
+    # the players' pads, then the console's control (Dev Menu): the order the
+    # package declares them, which a log with no LogKey is read in
+    groups = [[b for b in buttons if b.startswith("P1 ")], [b for b in buttons if b.startswith("P2 ")],
+              [b for b in buttons if not b.startswith(("P1 ", "P2 "))]]
     rows = []
     if a.movie:
         for line in open(a.movie):
             if line.startswith("#"):
                 continue
             held = line.strip()
-            rows.append(["".join(LETTERS[b[3:]] if b in groups[0] and LETTERS[b[3:]] in held else "." for b in g) for g in groups])
+            # player 1's buttons and the console's are the movie's letters
+            rows.append(["".join(LETTERS[b[3:]] if b in groups[0] and LETTERS[b[3:]] in held else
+                                 LETTERS[b] if b in groups[2] and LETTERS[b] in held else "." for b in g)
+                         for g in groups])
     while len(rows) < a.frames:
         rows.append(["." * len(g) for g in groups])
     rows = ["|" + "|".join(r) + "|" for r in rows[:a.frames]]
+    key = "LogKey:" + "".join("#" + "".join(b + "|" for b in g) for g in groups)
     if a.log_out:
-        open(a.log_out, "w").write("\n".join(rows) + "\n")
-    log = "[Input]\nLogKey:" + "".join("#" + "".join(b + "|" for b in g) for g in groups) + "\n" + "\n".join(rows) + "\n[/Input]\n"
+        # with its LogKey, so chimera-run reads the columns by name (the
+        # Dev Menu column among them)
+        open(a.log_out, "w").write(key + "\n" + "\n".join(rows) + "\n")
+    log = "[Input]\n" + key + "\n" + "\n".join(rows) + "\n[/Input]\n"
 
     project = {
         "id": "rsdkv5u-frontend-gate",

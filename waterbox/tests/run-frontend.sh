@@ -2,9 +2,10 @@
 # The frontend half of the tests: the package, as Chimera loads it, playing
 # the core's own test game (tests/make-test-game.py, the v4 one, as the
 # Sonic 1 firmware file; then the v3 one as Sonic CD's for the engine run),
-# 100 frames of tests/test.movie. With -d <pack> -g <game> it plays one of
-# Sonic Origins' data packs instead (never in the repository), 3000 frames of
-# a route made without the data.
+# 100 frames of tests/test.movie. With -d <pack> -g <game> it plays a real
+# game's pack instead (never in the repository): Sonic Origins' as it is, or
+# a 2013 or 2011 release's converted for the test (convert-pack.py), 1800
+# frames through the developer menu into the first stage.
 #
 # - chimera-run (the engine, no frontend): the route from a movie file
 #   and from a hand-written project. The Game State and Players
@@ -82,12 +83,21 @@ settings="{\"game\": \"$which\"}"
 printf '%s' "$settings" > "$work/native/settings"
 data="$work/native/$fwid"
 if [ -n "$game" ]; then
-	# one of Sonic Origins' packs, as the reference's work dir and as the
-	# project's firmware. The route is a guess made without the data: Start
-	# and A now and then through the title and the menus, then right.
+	# a real game's pack, as the reference's work dir and as the project's
+	# firmware. A pack of the 2013 or 2011 release, which the core refuses as
+	# it comes, is converted for the test (convert-pack.py). The route is the
+	# gate's: the developer menu (the setting on) to the first stage, then
+	# right with jumps.
 	[ -f "$game" ] || { report "game" FAIL "no file at $game"; echo; echo "$ok ok, $failed failed"; exit 1; }
-	cp "$game" "$data"
-	frames=3000
+	case "$(head -c 6 "$game" | tr -d '\0')" in
+		RSDKv3|RSDKv4|RSDKv5) cp "$game" "$data" ;;
+		*) python3 "$here/convert-pack.py" "$game" "$data" > "$work/convert.log" 2>&1 &&
+			report "game" PASS "a standalone release's pack, converted for the test: $(cat "$work/convert.log")" ||
+			{ report "game" FAIL "the pack did not convert: $(tail -1 "$work/convert.log")"; echo; echo "$ok ok, $failed failed"; exit 1; } ;;
+	esac
+	settings="{\"game\": \"$which\", \"devMenu\": true}"
+	printf '%s' "$settings" > "$work/native/settings"
+	frames=1800
 	movie="$work/route.movie"
 	python3 - "$movie" "$frames" <<'PY'
 import sys
@@ -96,8 +106,9 @@ rows = [""] * n
 def press(at, keys, length):
     for f in range(at, min(at + length, n)):
         rows[f] += keys
-press(600, "S", 5); press(900, "S", 5); press(1200, "A", 5); press(1500, "S", 5); press(1800, "A", 5)
-press(2100, "R", 900); press(2400, "A", 10); press(2700, "A", 10)
+press(700, "E", 3); press(740, "D", 3); press(760, "D", 3); press(780, "A", 3); press(820, "D", 3)
+press(840, "A", 3); press(880, "A", 3)
+press(1000, "R", 700); press(1150, "A", 10); press(1400, "A", 10); press(1500, "A", 10)
 open(path, "w").write("\n".join(rows) + "\n")
 PY
 else
@@ -232,7 +243,7 @@ fi
 if [ "$(meta gui game_list)" = "absent" ]; then
 	:
 elif [ -n "$game" ]; then
-	report "gui:globals" SKIP "the test game's globals; a Sonic Origins pack was given"
+	report "gui:globals" SKIP "the test game's globals; a real game's pack was given"
 elif [ "$(meta gui game_presses)" = "4" ] && [ "$(meta gui game_presses_set)" = "true" ] && [ "$(meta gui game_presses_after_set)" = "77" ] &&
      [ "$(meta gui game_mode)" = "Main Game" ] && [ "$(meta gui game_version_set)" = "false" ]; then
 	report "gui:globals" PASS "Global.test.presses is 4 (the movie's four presses of A) and set to 77 took; Engine.Mode is named Main Game; Engine.Version (read only) refused"
