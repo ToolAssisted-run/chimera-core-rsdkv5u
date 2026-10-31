@@ -100,10 +100,16 @@ def git(*args, default="unknown"):
                               text=True, check=True).stdout.strip()
     except Exception:
         return default
+# where the source came from, when it is a repository on the network; a
+# clone of a folder on this machine would put that folder's path (and the
+# user's name in it) into the package
+origin = git("config", "--get", "remote.origin.url", default="")
+if not (("://" in origin and not origin.startswith("file://")) or origin.startswith("git@")):
+    origin = ""
 json.dump({
     "version": "$core_version",
     "source": {"commit": git("rev-parse", "HEAD"),
-               "origin": git("config", "--get", "remote.origin.url", default=""),
+               "origin": origin,
                "dirty": "-dirty" in "$core_version"},
     "toolchain": {"compiler": "gcc $gccver", "binutils": "$binutils_version",
                   "target": "x86_64-linux-musl", "musl": "$musl_version"},

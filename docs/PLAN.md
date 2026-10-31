@@ -241,6 +241,23 @@ bent the gate failed on it (26 passed, 1 failed); after it was fixed, 27
 passed. Chimera's own check (tools/check-proper-nouns.py, pointed at
 waterbox) and tools/check-core-texts.py also pass on the tables.
 
+## A fresh clone (2026-10-31)
+
+A `git clone` of this repository, `git submodule update --init
+--recursive`, then the commands of docs/BUILDING.md, with Chimera main
+cb46d2b7 and its miniBox (7216594): the gate built everything from
+nothing (355 objects) and passed 27, failed 0, skipped 3 (the Origins
+packs); build-package.sh made the package; the frontend test passed 11 of
+11; Chimera's contract tests 21 passed, 0 failed. Its core.wbx is
+byte for byte the one built in this checkout.
+
+One thing it found: the package's build.json recorded the clone's origin,
+a folder on this machine (/home/<user>/...), so a package built from a
+local clone carried the builder's path and user name. build-package.sh now
+records the origin only when it is a repository on the network
+(https://... or git@...); tried with both (empty for the folder, the
+GitHub address for that).
+
 ## Where this stands (2026-10-31)
 
 Works, on the test games only: the core in both legacy modes, native and
