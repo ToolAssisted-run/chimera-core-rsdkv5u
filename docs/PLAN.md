@@ -74,8 +74,8 @@ decompilation of it is public.
   `RSDK_AUTOBUILD` defined (DLC off), a Plus Content setting off by default
   (user-decided for rsdkv5 on 2026-10-17), `commercialUse: no` in the
   package, the authors credited, LICENSE-RSDK.txt in the repository and the
-  package, no game data anywhere. Awaiting the owner: the same terms
-  accepted again for this core.
+  package, no game data anywhere. The owner accepted the same terms for
+  this core (see "The owner's decisions", user-decided, 2026-10-31).
 - **One thread on one clock.** As rsdkv5: the engine's main loop is one
   frame a pass (patches/0001 splits it into start-up, frame and shutdown);
   the only thread, the music loader, is run at once; the clocks are the
@@ -179,21 +179,33 @@ Chimera at 3f8ea7e2 (~/chimera-scratch-bump) and its miniBox:
   `LD_LIBRARY_PATH=$HOME/qt/6.12.0/gcc_64/lib` for the frontend test.
 - The harness's `--dump-domain` keeps only the last one given.
 
-## Questions for the owner (2026-10-31)
+## The owner's decisions (user-decided, 2026-10-31)
 
-- A new core (this repository, rsdkv5u) or a part of the rsdkv5 core? The
-  engine is the same decompilation. Built here as a new core, because the
-  rsdkv5 core compiles Sonic Mania's logic in and pins the engine at the
-  commit Sonic Mania pins, its settings and properties are Mania's, and it
-  is published. A machine in rsdkv5 is possible: a Game choice of Sonic
-  Mania / Sonic 1 / Sonic 2 / Sonic CD, the engine moved to 191d7ae, and
-  the properties chosen by mode. Recommended: a separate core.
-- The name: "rsdkv5u" says the engine; the games are Sonic Origins' Sonic
-  1, 2 and CD. Sonic 3 & Knuckles is not in it.
-- The licence: the same non-commercial terms as the three rsdk cores.
-- Sound: Origins' packs carry little or none of the games' music and
-  effects (upstream's FAQ). A later step could take a second pack, such as
-  the 2013 remasters' Data.rsdk, for the sound; not built.
+The previous round put four questions to the owner (a new core or a part
+of rsdkv5, the name, the licence, the sound) and recommended an answer to
+each. The owner accepted every recommendation:
+
+- **A new core.** rsdkv5u is its own game core in its own repository, as
+  built, not a machine added to the published rsdkv5 core. The rsdkv5 core
+  compiles Sonic Mania's logic in, pins the engine where Sonic Mania needs
+  it and has Sonic Mania's settings and properties; this one has none of
+  them.
+- **The name.** The core is rsdkv5u (its coreName). The system is named
+  "Sonic Origins (Sonic 1, Sonic 2, Sonic CD)", which waterbox.config
+  already says. Sonic 3 & Knuckles is not in it.
+- **The licence.** The same RSDKv5(U) decompilation licence terms as the
+  rsdkv3, rsdkv4 and rsdkv5 cores, with the Plus Content setting off by
+  default. The setting also covers what the licence's "downloadable
+  content" means in the older games: Amy, and Knuckles in Sonic CD (patch
+  0003). This is how the core was built; nothing changed.
+- **Sound.** Decided after Sonic Origins' own packs have been tried; the
+  owner will provide them. No second sound pack is built now.
+- **Publishing.** Only after the Origins packs have been tried: no public
+  repository, no entry in Chimera's list of cores and no release before
+  then.
+
+None of these changed the core's code or declarations: the core already
+was what the recommendations described.
 
 ## Where this stands (2026-10-31)
 
