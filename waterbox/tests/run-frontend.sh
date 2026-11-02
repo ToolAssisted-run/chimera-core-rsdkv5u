@@ -219,7 +219,7 @@ fi
 # after every frame, and the project saved at the movie's end carries it
 "$rn" "$work/native" --frames "$frames" --movie "$movie" --trace "$work/igt.trace" --trace-props "Stage.Time Ms" > /dev/null 2>&1
 want_ms="$(awk -v s=$((frames - 1)) '$1 == s { print $4 }' "$work/igt.trace")"
-hdr() { python3 -c "import json,sys; print(json.load(open(sys.argv[1]))['headers'].get(sys.argv[2], ''))" "$work/gui.chimeraProject" "$1"; }
+hdr() { python3 -c "import json,sys,zipfile; print(json.load(zipfile.ZipFile(sys.argv[1]).open('project.json'))['headers'].get(sys.argv[2], ''))" "$work/gui.chimeraProject" "$1"; }
 want_text="$(printf '%02d:%02d.%03d' $((want_ms / 60000)) $((want_ms / 1000 % 60)) $((want_ms % 1000)))"
 if [ "$(meta gui saved)" = "1" ] && [ -n "$want_ms" ] && [ "$want_ms" -gt 0 ] && [ "$(meta gui game_time_ms)" = "$want_ms" ] &&
    [ "$(hdr GameTimeMs)" = "$want_ms" ] && [ "$(hdr GameTime)" = "$want_text" ] && [ "$(hdr GameTimeFrame)" = "$frames" ]; then
@@ -253,11 +253,17 @@ fi
 
 # the core's own refusal reaches the frontend: a screen width the core does
 # not take, which Chimera passes on as a number and only the core refuses
+# (the project is a zip: the copy keeps every file in it, with the JSON changed)
 python3 - "$work/gui.chimeraProject" "$work/wide.chimeraProject" <<'EOF'
-import json, sys
-p = json.load(open(sys.argv[1]))
-p["settings"]["screenWidth"] = 1000
-json.dump(p, open(sys.argv[2], "w"), indent="\t")
+import json, sys, zipfile
+with zipfile.ZipFile(sys.argv[1]) as src, zipfile.ZipFile(sys.argv[2], "w", zipfile.ZIP_DEFLATED) as dst:
+    for item in src.infolist():
+        data = src.read(item)
+        if item.filename == "project.json":
+            p = json.loads(data)
+            p["settings"]["screenWidth"] = 1000
+            data = json.dumps(p, indent="\t")
+        dst.writestr(item.filename, data)
 EOF
 code="$(gui refuse "$config" "$work/wide.chimeraProject" 10)"
 if grep -q "The setting screenWidth is 1000. It goes from 320 to 424." "$work/refuse.log"; then
