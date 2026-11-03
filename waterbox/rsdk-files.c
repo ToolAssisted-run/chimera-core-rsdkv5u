@@ -11,6 +11,13 @@
  *     with fmemopen. The stream itself (its position, its buffer) is in the
  *     guest's heap, which a savestate carries; a host file handle would not
  *     survive a load.
+ *   - or, when that file is a zip of the game's unpacked Data folder (issue
+ *     478; the person may have added files to it, such as an older
+ *     release's Music and SoundFX folders), the files in it: the zip is
+ *     sealed as a pack is, there is then no Data.rsdk, and the engine
+ *     reads its "Data/..." files one by one as upstream's "Data Folder"
+ *     mode does. Each file is unpacked into the guest's heap when it is
+ *     opened, and freed when it is closed.
  *   - Settings.ini: written by the core from the project's settings, so the
  *     engine starts as the project says and never as a settings file left on
  *     some disk says.
@@ -20,7 +27,8 @@
  *     read back by name, and carried by savestates like the rest of it.
  *   - anything else: not there.
  *
- * Names are matched by their last part and without regard to case.
+ * Names are matched by their last part and without regard to case; a file
+ * in the zip by its path under the Data folder, without regard to case.
  */
 #define _GNU_SOURCE
 #include <errno.h>
@@ -36,6 +44,7 @@
 #include <waterbox_slots.h>
 
 #include "rsdk-driver.h"
+#include "miniz.h"
 
 /* A text a person reads is a key of languages/en.json, each of its
  * arguments after a TEXT_ARG (chimera docs/translations.md). TEXT_ARG is a
@@ -48,6 +57,20 @@ int __real_fclose(FILE *f);
 /* the data pack, sealed after Init */
 static uint8_t *g_pack;
 static size_t g_pack_size;
+
+/* or the zip of a Data folder, sealed after Init: its reader, and where in
+ * it the Data folder is ("" when the zip holds the folder's contents, or
+ * the folder's path and a '/') */
+static uint8_t *g_zip;
+static mz_zip_archive g_zip_reader;
+static char g_zip_root[256];
+/* the files of the zip open now: each stream's bytes, freed at its close */
+#define ZIP_OPEN 64
+static struct
+{
+	FILE *stream;
+	void *data;
+} g_zip_open[ZIP_OPEN];
 
 /* Settings.ini, as the core wrote it */
 static char g_ini[4096];
@@ -147,6 +170,93 @@ static void write_ini(const struct rsdk_settings *s)
 static int g_pack_version;
 int rsdk_pack_version(void) { return g_pack_version; }
 
+/* The zip of a Data folder, read whole into sealed memory: where its Data
+ * folder is - the folder holding Game/GameConfig.bin nearest the zip's top -
+ * and the engine version of the game, told as DetectEngineVersion tells it
+ * from GameConfig.bin when there is no pack (RSDKv5 Reader.cpp): "CFG" is a
+ * v5 game; otherwise a v4 one, unless the title is followed by the four
+ * letters "Data", which is v3's layout. */
+static int read_zip(const char *name, size_t size, char *err, int errsize)
+{
+	g_zip = g_pack;
+	g_pack = NULL;
+	mz_zip_zero_struct(&g_zip_reader);
+	if (!mz_zip_reader_init_mem(&g_zip_reader, g_zip, size, 0))
+	{
+		snprintf(err, (size_t)errsize, "error.zip_not_readable" TEXT_ARG "%s", name);
+		return 0;
+	}
+	static const char k_config[] = "game/gameconfig.bin";
+	const size_t clen = sizeof k_config - 1;
+	int config = -1;
+	size_t root_len = 0;
+	const mz_uint count = mz_zip_reader_get_num_files(&g_zip_reader);
+	for (mz_uint i = 0; i < count; i++)
+	{
+		char path[512];
+		if (mz_zip_reader_get_filename(&g_zip_reader, i, path, sizeof path) >= sizeof path) continue;
+		const size_t len = strlen(path);
+		if (len < clen || strcasecmp(path + len - clen, k_config)) continue;
+		if (len > clen && path[len - clen - 1] != '/') continue;
+		if (len - clen >= sizeof g_zip_root) continue;
+		if (config < 0 || len - clen < root_len)
+		{
+			config = (int)i;
+			root_len = len - clen;
+			snprintf(g_zip_root, sizeof g_zip_root, "%.*s", (int)root_len, path);
+		}
+	}
+	if (config < 0)
+	{
+		snprintf(err, (size_t)errsize, "error.zip_has_no_data_folder" TEXT_ARG "%s", name);
+		return 0;
+	}
+	size_t n = 0;
+	uint8_t *cfg = (uint8_t *)mz_zip_reader_extract_to_heap(&g_zip_reader, (mz_uint)config, &n, 0);
+	if (!cfg)
+	{
+		snprintf(err, (size_t)errsize, "error.zip_not_readable" TEXT_ARG "%s", name);
+		return 0;
+	}
+	if (n >= 4 && cfg[0] == 'C' && cfg[1] == 'F' && cfg[2] == 'G' && cfg[3] == 0)
+		g_pack_version = 5;
+	else
+	{
+		g_pack_version = 4;
+		const size_t title = n ? cfg[0] : 0;
+		if (n >= 1 + title + 5 && cfg[1 + title] == 4 && !memcmp(cfg + 2 + title, "Data", 4)) g_pack_version = 3;
+	}
+	free(cfg);
+	return 1;
+}
+
+/* a file of the zip, by the path the engine asks for ("Data/..."): its bytes
+ * unpacked into the heap, read through a memory stream; NULL when the zip
+ * has no such file (the engine then says so, as it would of a missing file
+ * in a folder) */
+static FILE *open_in_zip(const char *path)
+{
+	while (path[0] == '.' && path[1] == '/') path += 2;
+	if (strncasecmp(path, "Data/", 5)) return NULL;
+	char want[512];
+	if (snprintf(want, sizeof want, "%s%s", g_zip_root, path + 5) >= (int)sizeof want) return NULL;
+	const int i = mz_zip_reader_locate_file(&g_zip_reader, want, NULL, 0);
+	if (i < 0) return NULL;
+	int slot = -1;
+	for (int k = 0; k < ZIP_OPEN && slot < 0; k++)
+		if (!g_zip_open[k].stream) slot = k;
+	if (slot < 0) { errno = EMFILE; return NULL; }
+	size_t n = 0;
+	void *data = mz_zip_reader_extract_to_heap(&g_zip_reader, (mz_uint)i, &n, 0);
+	/* an empty file is not one a memory stream can hold; none is a game's */
+	if (!data || !n) { free(data); errno = ENOENT; return NULL; }
+	FILE *f = fmemopen(data, n, "rb");
+	if (!f) { free(data); return NULL; }
+	g_zip_open[slot].stream = f;
+	g_zip_open[slot].data = data;
+	return f;
+}
+
 /* the game's data pack: the project's firmware for the chosen game, mounted
  * under its id (waterbox.config) */
 static int read_pack(const struct rsdk_settings *s, char *err, int errsize)
@@ -181,6 +291,7 @@ static int read_pack(const struct rsdk_settings *s, char *err, int errsize)
 		snprintf(err, (size_t)errsize, "error.could_not_be_read_whole" TEXT_ARG "%s", name);
 		return 0;
 	}
+	if (memcmp(g_pack, "PK\x03\x04", 4) == 0) return read_zip(name, (size_t)size, err, errsize);
 	/* the engine takes a file that is not a pack for no data at all and
 	 * starts its developer menu: the core refuses it instead. The pack is
 	 * the v5 engine's layout; its header names the engine version whose
@@ -328,6 +439,11 @@ FILE *__wrap_fopen(const char *path, const char *mode)
 	}
 	if (!strcasecmp(name, "Settings.ini") && g_ini_len) return fmemopen(g_ini, g_ini_len, "rb");
 	if (!strcasecmp(name, "Data.rsdk") && g_pack) return fmemopen(g_pack, g_pack_size, "rb");
+	if (g_zip)
+	{
+		FILE *f = open_in_zip(path);
+		if (f) return f;
+	}
 	errno = ENOENT;
 	return NULL;
 }
@@ -367,5 +483,14 @@ int __wrap_fclose(FILE *f)
 			return r;
 		}
 	}
+	for (int i = 0; i < ZIP_OPEN; i++)
+		if (f && f == g_zip_open[i].stream)
+		{
+			const int r = __real_fclose(f);
+			free(g_zip_open[i].data);
+			g_zip_open[i].stream = NULL;
+			g_zip_open[i].data = NULL;
+			return r;
+		}
 	return __real_fclose(f);
 }

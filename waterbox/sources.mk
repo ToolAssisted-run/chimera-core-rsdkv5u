@@ -88,7 +88,7 @@ RSDK_CXXFLAGS_COMMON := -std=gnu++17 -O2 $(NO_BUILTIN_MATH) $(RSDK_DEFS) -I$(INC
 CORE_C_NAMES := rsdk-files seams detmath wbx-entry
 CORE_CXX_NAMES := rsdk-driver game-state
 CORE_HDRS := rsdk-driver.h $(wildcard compat/*/*.h)
-CORE_CFLAGS_COMMON := -std=gnu11 -O2 -I$(INC_DIR) -I$(SDL)/include
+CORE_CFLAGS_COMMON := -std=gnu11 -O2 -I$(INC_DIR) -I$(SDL)/include -I$(RSDK)/dependencies/all/miniz
 CORE_CXXFLAGS_COMMON := $(RSDK_CXXFLAGS_COMMON)
 
 # ---- the calls the core answers itself

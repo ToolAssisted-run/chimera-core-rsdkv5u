@@ -171,6 +171,19 @@ else
 		else
 			report "engine:v3-project" FAIL "$(grep -m1 detail= "$work/v3run.meta" 2>/dev/null) (build/frontend/v3run.log)"
 		fi
+		# the v4 test game's files as a zip of its Data folder, chosen as the
+		# firmware in the pack's place (issue 478): Chimera takes the file
+		# (the entry pins no hash) and the machine is the pack's
+		python3 "$here/make-test-game.py" v4 "$work/data.zip"
+		python3 "$here/make-project.py" "$pkg" "$work/zip.chimeraProject" "$frames" --data "$work/data.zip" --movie "$movie" \
+			--settings "$settings" --firmware-id "$fwid"
+		( cd "$work" && "$crun" --project "$work/zip.chimeraProject" "$pkg" --firmware "$fwid=$work/data.zip" \
+			--dump "Game State=$work/zip.gs.bin" --dump "Players=$work/zip.gv.bin" --meta "$work/zip.meta" > "$work/zip.log" 2>&1 )
+		if grep -q '^status=OK' "$work/zip.meta" 2>/dev/null && same "$work/zip.gs.bin" "$work/zip.gv.bin"; then
+			report "engine:data-zip" PASS "a zip of the test game's Data folder as the firmware: Game State and Players are the pack's reference's"
+		else
+			report "engine:data-zip" FAIL "$(grep -m1 detail= "$work/zip.meta" 2>/dev/null) (build/frontend/zip.log)"
+		fi
 	fi
 fi
 

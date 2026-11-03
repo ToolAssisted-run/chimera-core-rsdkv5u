@@ -398,6 +398,57 @@ Measured with Chimera main cb46d2b7:
   passed, 0 failed. tools/check-core-texts.py (48 keys), check-names.py
   and Chimera's check-proper-nouns.py: all pass.
 
+## A zip of the Data folder in the pack's place (user-decided, 2026-11-03, issue 478)
+
+Issue 478: Sonic Origins' packs give no sound, because Origins keeps its
+music and most effects outside them. The reporter unpacked Sonic1u.rsdk,
+Sonic2u.rsdk and SonicCDu.rsdk with RetroED, copied the older releases'
+Music and SoundFX folders into each Data folder, and ran upstream's
+RSDKv5U on the folder ("Sonic 2 (Using Data Folder)", Legacy v4 Mode, in
+the issue's picture). They asked the core to take that folder or a zip of
+it.
+
+The owner decided (2026-11-03): **take a zipped Data folder.** The game's
+data, the firmware of the chosen game, may be the pack or a zip of the
+unpacked Data folder, and the sound is whatever the person put in it. Not
+chosen: reading Sonic Origins' own sound files.
+
+How (waterbox/rsdk-files.c): a firmware file that starts as a zip
+("PK\3\4") is read whole into sealed memory, as a pack is. The Data
+folder is the folder in the zip that holds Game/GameConfig.bin nearest the
+zip's top, so a zip of the folder ("Data/Game/...") and a zip of its
+contents ("Game/...") both work. There is then no Data.rsdk for the
+engine, which runs upstream's own "Data Folder" mode and opens its
+"Data/..." files one by one; the core finds each in the zip (any case, as
+on Windows), unpacks it into the guest's heap with miniz (already in the
+build, which reads zips) and frees it when the engine closes it. The
+engine version comes from GameConfig.bin as upstream's
+DetectEngineVersion reads it when there is no pack. Two new refusals: a
+zip with no Game/GameConfig.bin (`error.zip_has_no_data_folder`) and a
+file that starts as a zip and cannot be read as one
+(`error.zip_not_readable`). The firmware descriptions and the "not a data
+pack" refusal now say a zip is taken too; all four texts are in the 26
+language tables. Chimera needs no change: these firmware entries pin no
+hash, so any file is taken and the project records its hash.
+
+A trap: without a pack, upstream's v3 and v4 modes do not use compiled
+scripts (Bytecode/GlobalCode.bin is read only `if (useDataPack && ...)`)
+and compile the scripts' text files instead. So a Data folder runs only
+if it holds the scripts as text, as the reporter's evidently does. The
+core keeps upstream's rule.
+
+Measured (against Chimera 08ee9de1): the core's v4 and v3 test games from
+a zip of their Data folder run as from the pack - pictures, sound, frames
+and memory the same, native and sandbox; a state saved and loaded before
+every frame changes nothing (a state is 5,994,440 bytes against the
+pack's 5,982,152); a zip of the folder's contents runs the same.
+run-gate.sh 39 passed, 0 failed (6 skipped: the Origins and standalone
+packs, not given); run-frontend.sh 12 of 12 (new: engine:data-zip, a
+project whose firmware is the zip, through chimera-run); test-packages
+all passed. Seen to fail: the core before the change refuses the zip as
+"not a Retro Engine data pack". Not tried: Sonic Origins' data, unpacked
+or not, which has never been given.
+
 ## Where this stands (2026-10-31, fourth round)
 
 The core plays packs in the v5 layout, as Sonic Origins' are, and refuses

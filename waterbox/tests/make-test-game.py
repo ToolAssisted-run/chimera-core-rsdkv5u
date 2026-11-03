@@ -4,6 +4,10 @@ scratch: no part of any Sega game is in them.
 
     make-test-game.py v4 <out.rsdk>     a game for the engine's v4 mode
     make-test-game.py v3 <out.rsdk>     a game for the engine's v3 mode
+    make-test-game.py v4|v3 <out.zip>   the same game's files as a zip of
+                                        its Data folder (issue 478), each
+                                        compressed, as a person zips the
+                                        folder a pack was unpacked into
 
 Sonic Origins keeps Sonic 1 and Sonic 2 as v4 games and Sonic CD as a v3
 game, each in a data pack of the v5 engine's layout whose header names the
@@ -49,6 +53,7 @@ import hashlib
 import os
 import struct
 import sys
+import zipfile
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 
@@ -262,7 +267,7 @@ end sub
 
 def main():
     if len(sys.argv) != 3 or sys.argv[1] not in ("v3", "v4"):
-        sys.exit("usage: make-test-game.py v3|v4 <out.rsdk>")
+        sys.exit("usage: make-test-game.py v3|v4 <out.rsdk>|<out.zip>")
     common = {
         "Data/SoundFX/Test/Beep.wav": beep(),
         "Data/Music/Tune.ogg": open(os.path.join(HERE, "tune.ogg"), "rb").read(),
@@ -284,6 +289,14 @@ def main():
             "Data/Scripts/Test/Box.txt": V3_BOX.replace("\n", "\r\n").encode(),
         })
         data = pack("3", files)
+    if sys.argv[2].endswith(".zip"):
+        # the Data folder, in the order a folder lists its files
+        with zipfile.ZipFile(sys.argv[2], "w", zipfile.ZIP_DEFLATED) as z:
+            for name in sorted(files):
+                info = zipfile.ZipInfo(name, (2026, 1, 1, 0, 0, 0))
+                info.compress_type = zipfile.ZIP_DEFLATED
+                z.writestr(info, files[name])
+        return
     open(sys.argv[2], "wb").write(data)
 
 

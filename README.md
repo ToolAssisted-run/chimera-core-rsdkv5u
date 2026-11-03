@@ -17,8 +17,11 @@ The build makes one file, `rsdkv5u.chimeraCore`. Put it in Chimera's
 
 The game's data pack from a Sonic Origins installation, as the project's
 firmware: Sonic1u.rsdk, Sonic2u.rsdk or SonicCDu.rsdk, the Game setting
-choosing which. This package contains none of the games. No pack has been
-tried yet (docs/PLAN.md).
+choosing which. In its place you can give a zip of the game's Data folder,
+unpacked from the pack (RetroED unpacks it), with anything you add to it,
+such as an older release's Music and SoundFX folders for the sound. This
+package contains none of the games. No pack of Sonic Origins has been tried
+yet (docs/PLAN.md).
 
 ## Settings
 
@@ -34,7 +37,8 @@ content (off by default), the random seed, and the engine's developer menu
   core that plays them: rsdkv4 for Sonic 1 and Sonic 2 (2013), rsdkv3 for
   Sonic CD (2011).
 - Sound: Sonic Origins keeps most of its music and effects outside these
-  packs.
+  packs. A zip of the Data folder plays whatever music and effects you put
+  in it; the core reads no sound files of Sonic Origins' own.
 - Mods: the decompilation's mod loader is off.
 
 [docs/PLAN.md](docs/PLAN.md) says what was decided and measured,

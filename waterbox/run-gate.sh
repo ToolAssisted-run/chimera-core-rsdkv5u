@@ -148,6 +148,37 @@ for v in v4 v3; do
 	fi
 done
 
+echo "== a zip of the Data folder (issue 478)"
+# The same test games' files as a zip of their Data folder, in the place of
+# the pack: the engine reads them one by one, as upstream's "Data Folder"
+# mode does. The run is the pack's (the pictures, the sound, the frames and
+# the memory), in both builds; a state saved and loaded before every frame
+# changes nothing; and a zip of the folder's contents (no Data folder at
+# its top, as when the files inside the folder are zipped) is read the same.
+for v in v4 v3; do
+	mkdir -p "$work/$v-zip" "$work/$v-flat"
+	file="$(cd "$work/$v" && ls ./*.rsdk)"
+	file="${file#./}"
+	cp "$work/$v/settings" "$work/$v-zip/settings"
+	cp "$work/$v/settings" "$work/$v-flat/settings"
+	python3 "$here/tests/make-test-game.py" "$v" "$work/$v-zip/data.zip"
+	python3 - "$work/$v-zip/data.zip" "$work/$v-flat/$file" <<'EOF'
+import sys, zipfile
+with zipfile.ZipFile(sys.argv[1]) as a, zipfile.ZipFile(sys.argv[2], "w", zipfile.ZIP_DEFLATED) as b:
+    for name in a.namelist():
+        b.writestr(name[len("Data/"):], a.read(name))
+EOF
+	mv "$work/$v-zip/data.zip" "$work/$v-zip/$file"
+	"$native" "$work/$v-zip" --frames $frames --movie "$movie" > "$work/$v-zip.n" 2>&1
+	"$wbx" "$core" "$work/$v-zip" --frames $frames --movie "$movie" > "$work/$v-zip.w" 2> "$work/$v-zip.werr"
+	"$wbx" "$core" "$work/$v-zip" --frames $frames --movie "$movie" --rerecord > "$work/$v-zip.r" 2> "$work/$v-zip.rerr"
+	"$wbx" "$core" "$work/$v-flat" --frames $frames --movie "$movie" > "$work/$v-flat.w" 2> "$work/$v-flat.werr"
+	same "$v zip" "$work/$v-zip.n" "$work/$v.n" "the Data folder's zip in the place of the pack: the pack's run, native"
+	same "$v zip" "$work/$v-zip.w" "$work/$v.w" "the Data folder's zip: the pack's run, sandbox"
+	same "$v zip" "$work/$v-zip.r" "$work/$v-zip.w" "the Data folder's zip: save+load before every frame = straight ($(sed -n 's/stateBytes=//p' "$work/$v-zip.rerr") state bytes)"
+	same "$v zip" "$work/$v-flat.w" "$work/$v.w" "a zip of the Data folder's contents: the pack's run"
+done
+
 echo "== turbo"
 "$native" "$work/v4" --frames $frames --movie "$movie" --turbo > "$work/t.txt"
 digests "$work/t.txt" | grep -v '^videoHash=' > "$work/t.d"
@@ -234,7 +265,15 @@ python3 "$here/tests/make-test-game.py" v4 "$work/vB/Sonic1u.rsdk"
 printf 'RSDKvB' | dd of="$work/vB/Sonic1u.rsdk" conv=notrunc 2>/dev/null
 printf '{"game": "sonic1"}' > "$work/vB/settings"
 mkgame wide v4 '{"game": "sonic1", "screenWidth": 640}'
+# a zip with no Data folder in it, and a file that starts as a zip and is not one
+mkdir -p "$work/nodata" "$work/badzip"
+python3 -c "import sys, zipfile; zipfile.ZipFile(sys.argv[1], 'w').writestr('Readme.txt', 'no game here')" "$work/nodata/Sonic1u.rsdk"
+printf '{"game": "sonic1"}' > "$work/nodata/settings"
+{ printf 'PK\003\004'; head -c 100000 /dev/zero; } > "$work/badzip/Sonic1u.rsdk"
+printf '{"game": "sonic1"}' > "$work/badzip/settings"
 refuse none "error.game_s_data_file_missing.Sonic1u.rsdk" "no data file"
+refuse nodata "error.zip_has_no_data_folder.Sonic1u.rsdk" "a zip with no Data folder"
+refuse badzip "error.zip_not_readable.Sonic1u.rsdk" "a file that starts as a zip and is not one"
 refuse junk "error.is_not_a_retro_engine_pack" "a file of zeros"
 refuse v5 "error.pack_is_not_v3_or_v4.Sonic1u.rsdk.5" "a v5 pack"
 refuse vB "error.pack_is_from_2013_release.Sonic1u.rsdk" "a pack headed RSDKvB, as the 2013 releases' are"
