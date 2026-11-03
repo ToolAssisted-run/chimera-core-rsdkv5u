@@ -64,6 +64,10 @@ static size_t g_pack_size;
 static uint8_t *g_zip;
 static mz_zip_archive g_zip_reader;
 static char g_zip_root[256];
+/* how much of g_zip_root is the folder that holds the Data folder: all of it
+ * but a last "Data/" (all of it for a zip of the folder's contents) */
+static size_t g_zip_beside;
+static const char *base_name(const char *path);
 /* the files of the zip open now: each stream's bytes, freed at its close */
 #define ZIP_OPEN 64
 static struct
@@ -211,6 +215,10 @@ static int read_zip(const char *name, size_t size, char *err, int errsize)
 		snprintf(err, (size_t)errsize, "error.zip_has_no_data_folder" TEXT_ARG "%s", name);
 		return 0;
 	}
+	g_zip_beside = root_len;
+	if (root_len >= 5 && !strcasecmp(g_zip_root + root_len - 5, "Data/") &&
+	    (root_len == 5 || g_zip_root[root_len - 6] == '/'))
+		g_zip_beside = root_len - 5;
 	size_t n = 0;
 	uint8_t *cfg = (uint8_t *)mz_zip_reader_extract_to_heap(&g_zip_reader, (mz_uint)config, &n, 0);
 	if (!cfg)
@@ -230,16 +238,25 @@ static int read_zip(const char *name, size_t size, char *err, int errsize)
 	return 1;
 }
 
-/* a file of the zip, by the path the engine asks for ("Data/..."): its bytes
- * unpacked into the heap, read through a memory stream; NULL when the zip
- * has no such file (the engine then says so, as it would of a missing file
- * in a folder) */
+/* a file of the zip, by the path the engine asks for: "Data/..." under the
+ * Data folder, and anything else beside it, in the folder that holds the
+ * Data folder - where the v4 games of Sonic Origins keep their compiled
+ * scripts, "Bytecode/..." (issue 480). Its bytes are unpacked into the heap
+ * and read through a memory stream; NULL when the zip has no such file (the
+ * engine then says so, as it would of a missing file in a folder). A data
+ * pack is never taken from inside the zip. */
 static FILE *open_in_zip(const char *path)
 {
 	while (path[0] == '.' && path[1] == '/') path += 2;
-	if (strncasecmp(path, "Data/", 5)) return NULL;
 	char want[512];
-	if (snprintf(want, sizeof want, "%s%s", g_zip_root, path + 5) >= (int)sizeof want) return NULL;
+	int len;
+	if (!strncasecmp(path, "Data/", 5))
+		len = snprintf(want, sizeof want, "%s%s", g_zip_root, path + 5);
+	else if (!strcasecmp(base_name(path), "Data.rsdk"))
+		return NULL;
+	else
+		len = snprintf(want, sizeof want, "%.*s%s", (int)g_zip_beside, g_zip_root, path);
+	if (len < 0 || len >= (int)sizeof want) return NULL;
 	const int i = mz_zip_reader_locate_file(&g_zip_reader, want, NULL, 0);
 	if (i < 0) return NULL;
 	int slot = -1;

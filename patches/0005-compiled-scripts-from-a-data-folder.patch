@@ -1,0 +1,32 @@
+diff --git a/RSDKv5/RSDK/Core/Legacy/v3/RetroEnginev3.cpp b/RSDKv5/RSDK/Core/Legacy/v3/RetroEnginev3.cpp
+--- a/RSDKv5/RSDK/Core/Legacy/v3/RetroEnginev3.cpp
++++ b/RSDKv5/RSDK/Core/Legacy/v3/RetroEnginev3.cpp
+@@ -182,7 +182,11 @@
+ 
+         usingBytecode = false;
+         InitFileInfo(&info);
+-        if (useDataPack && LoadFile(&info, "Data/Scripts/Bytecode/GlobalCode.bin", FMODE_RB)) {
++        // Chimera: the compiled scripts are used whenever they are there, from
++        // a data pack or from a Data folder, as upstream's builds with the
++        // mod loader decide (SceneLegacyv*.cpp, bytecodeExists); without the
++        // mod loader a Data folder was always read as script text
++        if (LoadFile(&info, "Data/Scripts/Bytecode/GlobalCode.bin", FMODE_RB)) {
+             usingBytecode = true;
+             CloseFile(&info);
+         }
+diff --git a/RSDKv5/RSDK/Core/Legacy/v4/RetroEnginev4.cpp b/RSDKv5/RSDK/Core/Legacy/v4/RetroEnginev4.cpp
+--- a/RSDKv5/RSDK/Core/Legacy/v4/RetroEnginev4.cpp
++++ b/RSDKv5/RSDK/Core/Legacy/v4/RetroEnginev4.cpp
+@@ -184,7 +184,11 @@
+ 
+         usingBytecode = false;
+         InitFileInfo(&info);
+-        if (useDataPack && LoadFile(&info, "Bytecode/GlobalCode.bin", FMODE_RB)) {
++        // Chimera: the compiled scripts are used whenever they are there, from
++        // a data pack or from a Data folder, as upstream's builds with the
++        // mod loader decide (SceneLegacyv*.cpp, bytecodeExists); without the
++        // mod loader a Data folder was always read as script text
++        if (LoadFile(&info, "Bytecode/GlobalCode.bin", FMODE_RB)) {
+             usingBytecode = true;
+             CloseFile(&info);
+         }

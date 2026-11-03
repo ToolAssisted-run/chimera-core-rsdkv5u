@@ -398,6 +398,52 @@ Measured with Chimera main cb46d2b7:
   passed, 0 failed. tools/check-core-texts.py (48 keys), check-names.py
   and Chimera's check-proper-nouns.py: all pass.
 
+## Compiled scripts from a Data folder (2026-11-03, issue 480)
+
+Issue 480: with the reporter's zips of Sonic Origins' unpacked Data folders
+and the published build c8c6b49d, Sonic 1 started, but a stage had no
+player and its platforms were thin striped bars. Their zips were downloaded
+for local tests only (the owner's decision, 2026-11-03), kept in
+`~/core-content/rsdkv5u/reporter-480/` and never in the repository: S1.zip
+and S2.zip hold `Data/` and, beside it, `Bytecode/` (the v4 games' compiled
+scripts); SCD.zip holds `Data/` with `Data/Scripts/ByteCode/`. None of
+them holds the scripts as text.
+
+Two causes, both the core's:
+
+1. Without a pack, the v3 and v4 modes read the scripts as text, never the
+   compiled ones (`usingBytecode` is set only `if (useDataPack && ...)`).
+   Upstream's own builds have the mod loader on, and with it the stage
+   loader uses the compiled scripts whenever `Bytecode/GlobalCode.bin` is
+   there (SceneLegacyv4.cpp, `bytecodeExists`). This core builds without
+   the mod loader, so it read text scripts that are not there. Patch 0005
+   makes the choice as upstream's builds do: the compiled scripts whenever
+   GlobalCode.bin is there, from a pack or a folder. With a pack nothing
+   changes. The note in the section below, that a Data folder needs the
+   scripts as text, was wrong: that was only this core's build.
+2. The core answered only "Data/..." from the zip; the v4 games ask for
+   "Bytecode/...", beside the Data folder. Now any other path is looked up
+   in the folder that holds the Data folder (a data pack is never taken
+   from inside the zip).
+
+Measured with the reporter's three zips (run-gate.sh -1 S1.zip -2 S2.zip -c
+SCD.zip; the developer-menu route to the first stage): each game native =
+sandbox over 1800 frames; in a stage, Player 1 ran 1819 (Sonic 1), 2317
+(Sonic 2) and 1566 (Sonic CD) pixels from frame 1000; sound level 4527, 2215
+and 4214 in the last ten seconds; a state saved and loaded before every
+frame = straight (states of 15.6, 14.2 and 10.4 MB); a session at frame
+1620 = straight. The pictures at frame 1800 show Green Hill, Emerald Hill
+and Palmtree Panic with the player, rings and the HUD. Before the change,
+Sonic 1 from the same zip showed only the background at frame 1800.
+run-gate.sh 51 passed, 0 failed, 3 skipped (the standalone packs, not
+given). run-frontend.sh 12 of 12 on the test games, and with `-d S1.zip -g
+sonic1` (which now takes a zip as it is) 9 passed, 1 skipped (a test-game
+check): Chimera's window plays the reporter's Sonic 1 to the same Game
+State and Players as the native build. test-packages all passed. CI has no
+test of the compiled scripts in a folder: making compiled scripts needs a
+compiler this repository does not have, and the reporter's data may not be
+published.
+
 ## A zip of the Data folder in the pack's place (user-decided, 2026-11-03, issue 478)
 
 Issue 478: Sonic Origins' packs give no sound, because Origins keeps its

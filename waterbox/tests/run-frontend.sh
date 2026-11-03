@@ -84,13 +84,14 @@ printf '%s' "$settings" > "$work/native/settings"
 data="$work/native/$fwid"
 if [ -n "$game" ]; then
 	# a real game's pack, as the reference's work dir and as the project's
-	# firmware. A pack of the 2013 or 2011 release, which the core refuses as
-	# it comes, is converted for the test (convert-pack.py). The route is the
+	# firmware; or a zip of its Data folder, which the core takes as it is
+	# (issues 478 and 480). A pack of the 2013 or 2011 release, which the core
+	# refuses as it comes, is converted for the test (convert-pack.py). The route is the
 	# gate's: the developer menu (the setting on) to the first stage, then
 	# right with jumps.
 	[ -f "$game" ] || { report "game" FAIL "no file at $game"; echo; echo "$ok ok, $failed failed"; exit 1; }
 	case "$(head -c 6 "$game" | tr -d '\0')" in
-		RSDKv3|RSDKv4|RSDKv5) cp "$game" "$data" ;;
+		RSDKv3|RSDKv4|RSDKv5|PK*) cp "$game" "$data" ;;
 		*) python3 "$here/convert-pack.py" "$game" "$data" > "$work/convert.log" 2>&1 &&
 			report "game" PASS "a standalone release's pack, converted for the test: $(cat "$work/convert.log")" ||
 			{ report "game" FAIL "the pack did not convert: $(tail -1 "$work/convert.log")"; echo; echo "$ok ok, $failed failed"; exit 1; } ;;

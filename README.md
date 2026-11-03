@@ -20,8 +20,9 @@ firmware: Sonic1u.rsdk, Sonic2u.rsdk or SonicCDu.rsdk, the Game setting
 choosing which. In its place you can give a zip of the game's Data folder,
 unpacked from the pack (RetroED unpacks it), with anything you add to it,
 such as an older release's Music and SoundFX folders for the sound. This
-package contains none of the games. No pack of Sonic Origins has been tried
-yet (docs/PLAN.md).
+package contains none of the games. Sonic Origins' Sonic 1, Sonic 2 and Sonic
+CD have been played from such zips; its packs as they come have not been
+tried yet (docs/PLAN.md).
 
 ## Settings
 
@@ -31,8 +32,9 @@ content (off by default), the random seed, and the engine's developer menu
 
 ## What it does not do yet
 
-- Sonic Origins' own packs have not been tried; the tests run on two small
-  games written for them.
+- Sonic Origins' own packs, as they come, have not been tried. Its three
+  games have been played from zips of their unpacked Data folders, and the
+  tests in CI run on two small games written for them.
 - The standalone releases' packs are refused, and the refusal names the
   core that plays them: rsdkv4 for Sonic 1 and Sonic 2 (2013), rsdkv3 for
   Sonic CD (2011).
