@@ -10,12 +10,18 @@ include sources.mk
 
 B := $(ROOT)/build/native
 MBINCS := -Inative-shim -I$(MB)/source/guest/include -I$(MB)/extern/jsmn
+# On aarch64 GCC fuses a multiply and an add into one instruction unless told
+# not to, which rounds once where the guest (built with -ffp-contract=off)
+# rounds twice: the mixed sound came out different. Both builds keep them apart.
+ifeq ($(shell uname -m),aarch64)
+NATIVE_CPU := -ffp-contract=off
+endif
 
-SDL_CFLAGS := $(SDL_CFLAGS_COMMON) $(SDL_WARN)
-CODEC_CFLAGS := $(CODEC_CFLAGS_COMMON)
-RSDK_CXXFLAGS := $(RSDK_CXXFLAGS_COMMON) -w
-CORE_CFLAGS := $(CORE_CFLAGS_COMMON) $(MBINCS) -I. -Wall
-CORE_CXXFLAGS := $(CORE_CXXFLAGS_COMMON) $(MBINCS) -I. -Wall -Wno-unused-function
+SDL_CFLAGS := $(SDL_CFLAGS_COMMON) $(SDL_WARN) $(NATIVE_CPU)
+CODEC_CFLAGS := $(CODEC_CFLAGS_COMMON) $(NATIVE_CPU)
+RSDK_CXXFLAGS := $(RSDK_CXXFLAGS_COMMON) -w $(NATIVE_CPU)
+CORE_CFLAGS := $(CORE_CFLAGS_COMMON) $(MBINCS) -I. -Wall $(NATIVE_CPU)
+CORE_CXXFLAGS := $(CORE_CXXFLAGS_COMMON) $(MBINCS) -I. -Wall -Wno-unused-function $(NATIVE_CPU)
 
 $(call flags_stamp,$(B),$(SDL_CFLAGS) | $(CODEC_CFLAGS) | $(RSDK_CXXFLAGS) | $(CORE_CFLAGS) | $(CORE_CXXFLAGS))
 
